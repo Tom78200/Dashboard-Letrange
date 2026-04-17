@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=block" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -204,32 +205,8 @@
                         <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">02</span>
                         <h2 class="text-sm font-black uppercase tracking-widest">Moodboard / Galerie <span class="text-zinc-400 font-normal ml-2">(Jusqu'à 5 images)</span></h2>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                        <div class="gallery-slot" id="slot-0" onclick="openPicker(0)">
-                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">1</div>
-                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(0)"><span class="material-symbols-outlined text-[12px]">close</span></div>
-                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
-                        </div>
-                        <div class="gallery-slot" id="slot-1" onclick="openPicker(1)">
-                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">2</div>
-                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(1)"><span class="material-symbols-outlined text-[12px]">close</span></div>
-                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
-                        </div>
-                        <div class="gallery-slot" id="slot-2" onclick="openPicker(2)">
-                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">3</div>
-                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(2)"><span class="material-symbols-outlined text-[12px]">close</span></div>
-                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
-                        </div>
-                        <div class="gallery-slot" id="slot-3" onclick="openPicker(3)">
-                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">4</div>
-                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(3)"><span class="material-symbols-outlined text-[12px]">close</span></div>
-                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
-                        </div>
-                        <div class="gallery-slot" id="slot-4" onclick="openPicker(4)">
-                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">5</div>
-                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(4)"><span class="material-symbols-outlined text-[12px]">close</span></div>
-                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
-                        </div>
+                    <div id="moodboard-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                        <!-- slots rendered by JS -->
                     </div>
                 </section>
 
@@ -389,17 +366,19 @@
             }
             
             // Fill gallery
-            if (!card.gallery) card.gallery = [null, null, null, null, null];
-            
-            card.gallery.forEach((item, i) => {
-                const url = item && typeof item === 'object' ? item.url : item;
-                const prompt = item && typeof item === 'object' ? item.prompt : '';
-                
-                if (url) {
-                    updateSlotUI(i, url, prompt);
-                }
-            });
-            
+            if (card.gallery) {
+                renderMoodboard();
+            } else {
+                card.gallery = [
+                    { url: null, prompt: '' },
+                    { url: null, prompt: '' },
+                    { url: null, prompt: '' },
+                    { url: null, prompt: '' },
+                    { url: null, prompt: '' }
+                ];
+                renderMoodboard();
+            }
+            initMoodboardSortable();
             renderLibrary();
         }
 
@@ -463,16 +442,14 @@
                 document.getElementById('main-placeholder').classList.add('hidden');
             } else {
                 const slot = currentPickerSlot;
-                if (!currentWeek.cards[cardIdx].gallery) currentWeek.cards[cardIdx].gallery = [null, null, null, null, null];
+                if (!currentWeek.cards[cardIdx].gallery) currentWeek.cards[cardIdx].gallery = [{url:null,prompt:''},{url:null,prompt:''},{url:null,prompt:''},{url:null,prompt:''},{url:null,prompt:''}];
                 
-                // Initialize default object if needed
                 if (!currentWeek.cards[cardIdx].gallery[slot] || typeof currentWeek.cards[cardIdx].gallery[slot] !== 'object') {
                     currentWeek.cards[cardIdx].gallery[slot] = { url: null, prompt: '' };
                 }
                 
                 currentWeek.cards[cardIdx].gallery[slot].url = url;
-                updateSlotUI(slot, url);
-                // Auto-save removed as per user request
+                renderMoodboard();
             }
             closePicker();
         }
@@ -488,69 +465,138 @@
             reader.readAsDataURL(file);
         }
 
-        function updateSlotUI(slot, url, prompt = '') {
-            const slotEl = document.getElementById(`slot-${slot}`);
-            if (!url) {
-                slotEl.innerHTML = `
-                    <div class="absolute top-1.5 left-1.5 w-4 h-4 bg-zinc-100 text-zinc-400 text-[8px] font-black flex items-center justify-center rounded-full pointer-events-none z-10 border border-zinc-200">
-                        ${slot + 1}
+        function renderMoodboard() {
+            const grid = document.getElementById('moodboard-grid');
+            if (!grid) return;
+            const gallery = currentWeek.cards[cardIdx].gallery;
+            grid.innerHTML = '';
+            
+            gallery.forEach((item, idx) => {
+                const url = item ? item.url : null;
+                const prompt = item ? item.prompt : '';
+                const isActive = (prompt && prompt.trim().length > 0);
+                
+                const slotEl = document.createElement('div');
+                slotEl.className = 'gallery-slot group';
+                slotEl.setAttribute('data-idx', idx);
+                slotEl.onclick = () => openPicker(idx);
+                
+                const numberHtml = `
+                    <div class="absolute top-1.5 left-1.5 w-4 h-4 ${url || isActive ? 'bg-black/80 text-white shadow-md' : 'bg-zinc-100 text-zinc-400 border border-zinc-200'} text-[8px] font-black flex items-center justify-center rounded-full pointer-events-none z-10">
+                        ${idx + 1}
                     </div>
-                    <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${slot})"><span class="material-symbols-outlined text-[12px]">close</span></div>
-                    <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
                 `;
-                return;
-            }
-
-            const isActive = (prompt && prompt.trim().length > 0);
-            slotEl.innerHTML = `
-                <div class="absolute top-1.5 left-1.5 w-4 h-4 bg-black/80 text-white text-[8px] font-black flex items-center justify-center rounded-full pointer-events-none z-10 shadow-md">
-                    ${slot + 1}
-                </div>
-                <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${slot})"><span class="material-symbols-outlined text-[12px]">close</span></div>
                 
-                <img src="${url}" class="w-full h-full object-cover" />
-                
-                <div class="note-btn ${isActive ? 'active' : ''}" onclick="event.stopPropagation(); toggleNote(${slot})">
-                    <span class="material-symbols-outlined text-[16px]">${isActive ? 'sticky_note_2' : 'add_notes'}</span>
-                </div>
-                
-                <div class="note-overlay" id="note-overlay-${slot}" onclick="event.stopPropagation()">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[9px] font-bold uppercase tracking-widest">Note / Prompt</span>
-                        <button onclick="toggleNote(${slot})" class="text-zinc-400 hover:text-black mt-[-2px]">
-                            <span class="material-symbols-outlined text-[14px]">close</span>
-                        </button>
+                const removeBtn = `
+                    <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${idx})">
+                        <span class="material-symbols-outlined text-[12px]">close</span>
                     </div>
-                    <textarea id="prompt-${slot}" class="flex-1 bg-zinc-50 border-none p-2 text-[10px] focus:ring-0 resize-none" placeholder="Écrire ici...">${prompt}</textarea>
-                </div>
-            `;
+                `;
+                
+                const noteBtn = `
+                    <div class="note-btn ${isActive ? 'active' : ''}" onclick="event.stopPropagation(); toggleNote(${idx})">
+                        <span class="material-symbols-outlined text-[16px]">${isActive ? 'sticky_note_2' : 'add_notes'}</span>
+                    </div>
+                `;
+                
+                const noteOverlay = `
+                    <div class="note-overlay" id="note-overlay-${idx}" onclick="event.stopPropagation()">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] font-bold uppercase tracking-widest">Note / Prompt</span>
+                            <button onclick="toggleNote(${idx})" class="text-zinc-400 hover:text-black mt-[-2px]">
+                                <span class="material-symbols-outlined text-[14px]">close</span>
+                            </button>
+                        </div>
+                        <textarea id="prompt-${idx}" oninput="updatePrompt(${idx}, this.value)" class="flex-1 bg-zinc-50 border-none p-2 text-[10px] focus:ring-0 resize-none" placeholder="Écrire ici...">${prompt}</textarea>
+                    </div>
+                `;
+
+                let content = '';
+                if (url) {
+                    content = `<img src="${url}" class="w-full h-full object-cover" />`;
+                } else if (isActive) {
+                    content = `<div class="p-4 text-[9px] leading-tight text-zinc-500 font-medium italic text-center w-full px-6 truncate-2-lines">${prompt}</div>`;
+                } else {
+                    content = `<span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>`;
+                }
+
+                slotEl.innerHTML = `
+                    ${numberHtml}
+                    ${removeBtn}
+                    ${content}
+                    ${noteBtn}
+                    ${noteOverlay}
+                `;
+                grid.appendChild(slotEl);
+            });
+        }
+
+        function updatePrompt(idx, val) {
+            const card = currentWeek.cards[cardIdx];
+            if (!card.gallery[idx]) card.gallery[idx] = { url: null, prompt: '' };
+            card.gallery[idx].prompt = val;
+            
+            // Re-render only if needed (to update 'Active' state or showing text)
+            // But we don't want to lose focus on textarea.
+            const btn = document.querySelector(`[data-idx="${idx}"] .note-btn`);
+            if (val.trim().length > 0) btn.classList.add('active');
+            else btn.classList.remove('active');
+            
+            // Update the preview text in the slot if no image
+            if (!card.gallery[idx].url) {
+                const preview = document.querySelector(`[data-idx="${idx}"] .gallery-slot-text`);
+                // Actually, call renderMoodboard but avoid losing focus?
+                // Let's just update the note count visual.
+            }
+        }
+        
+        // Add style for truncated text in text-slots
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .truncate-2-lines {
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .gallery-slot.sortable-ghost { opacity: 0.3; background: #000; }
+        `;
+        document.head.appendChild(style);
+
+        function initMoodboardSortable() {
+            const el = document.getElementById('moodboard-grid');
+            Sortable.create(el, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    // Sync array
+                    const card = currentWeek.cards[cardIdx];
+                    const move = (arr, from, to) => {
+                        arr.splice(to, 0, arr.splice(from, 1)[0]);
+                    };
+                    move(card.gallery, evt.oldIndex, evt.newIndex);
+                    renderMoodboard(); // Refresh numbering and indicies
+                }
+            });
         }
 
         function toggleNote(slot) {
             const overlay = document.getElementById(`note-overlay-${slot}`);
             if (overlay) overlay.classList.toggle('open');
-        }
-
-        function removeMainImg() {
-            if (!confirm("Retirer l'image principale ?")) return;
-            document.getElementById('main-img').src = '';
-            document.getElementById('main-img').classList.add('hidden');
-            document.getElementById('main-placeholder').classList.remove('hidden');
-            currentWeek.cards[cardIdx].image = '';
+            // If opening, focus textarea
+            if (overlay.classList.contains('open')) {
+                const ta = document.getElementById(`prompt-${slot}`);
+                setTimeout(() => ta.focus(), 50);
+            } else {
+                // If closing, re-render to reflect text in slot if no image
+                renderMoodboard();
+            }
         }
 
         function removeGalleryImg(slot) {
             if (!currentWeek.cards[cardIdx].gallery) return;
-            
-            // Clear content
-            if (currentWeek.cards[cardIdx].gallery[slot] && typeof currentWeek.cards[cardIdx].gallery[slot] === 'object') {
-                currentWeek.cards[cardIdx].gallery[slot].url = null;
-                currentWeek.cards[cardIdx].gallery[slot].prompt = '';
-            } else {
-                currentWeek.cards[cardIdx].gallery[slot] = { url: null, prompt: '' };
-            }
-            
-            updateSlotUI(slot, null);
+            currentWeek.cards[cardIdx].gallery[slot].url = null;
+            renderMoodboard();
         }
 
         // ── Video (Table Storage Method) ───────────────────
