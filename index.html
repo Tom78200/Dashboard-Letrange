@@ -176,6 +176,25 @@
             border-radius: 2px;
             z-index: 10;
         }
+        .status-badge {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 2px 8px;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-radius: 2px;
+            z-index: 10;
+        }
+
+        /* Prevent horizontal scroll */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
     </style>
 </head>
 
@@ -227,17 +246,17 @@
                 <h2 class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Production
                     Dashboard</h2>
             </div>
-            <div class="flex items-center gap-4 lg:gap-6">
+            <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
                 <button onclick="focusBoardSearch()"
-                    class="material-symbols-outlined text-on-surface-variant hover:text-black cursor-pointer">search</button>
-                <input id="board-search" type="text" placeholder="Rechercher (nom, produit, héritage, twist...)"
+                    class="material-symbols-outlined text-on-surface-variant hover:text-black cursor-pointer text-[20px] sm:text-[24px]">search</button>
+                <input id="board-search" type="text" placeholder="Rechercher..."
                     oninput="onBoardSearch(this.value)"
-                    class="w-56 sm:w-72 border border-zinc-200 px-3 py-1.5 text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-colors" />
+                    class="w-32 sm:w-56 lg:w-72 border border-zinc-200 px-3 py-1.5 text-[10px] sm:text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-all" />
             </div>
         </header>
-        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 space-y-16 sm:space-y-24 lg:space-y-32">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 space-y-12 sm:space-y-24 lg:space-y-32">
             <!-- Dynamic Weeks -->
-            <div id="dynamic-weeks" class="space-y-16 sm:space-y-24 lg:space-y-32 pb-16 sm:pb-24 lg:pb-32"></div>
+            <div id="dynamic-weeks" class="space-y-12 sm:space-y-24 lg:space-y-32 pb-16 sm:pb-24 lg:pb-32"></div>
             
             <!-- Loading Indicator -->
             <div id="loader" class="flex flex-col items-center justify-center py-20 opacity-0 transition-opacity">
@@ -474,7 +493,7 @@
                 const hasContent = cardsToRender.some(({ card }) => card.image);
 
                 const section = document.createElement('section');
-                section.className = 'flex flex-col md:flex-row gap-8 lg:gap-12 pb-16';
+                section.className = 'flex flex-col md:flex-row gap-6 sm:gap-8 lg:gap-12 pb-12 sm:pb-16';
                 section.setAttribute('data-id', week.id);
                 section.innerHTML = `
                     <div class="flex flex-row md:flex-col md:w-32 items-center md:items-start gap-3 md:gap-0 md:sticky md:top-28 lg:top-32 h-fit">

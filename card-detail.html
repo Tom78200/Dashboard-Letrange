@@ -114,31 +114,39 @@
             z-index: 30;
         }
         .note-overlay.open { display: flex; }
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Prevent horizontal scroll */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
     </style>
 </head>
 <body class="bg-surface text-on-surface">
 
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 px-4 sm:px-8 lg:px-12 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-6">
-            <a href="index.html" class="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors">
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 px-3 sm:px-8 lg:px-12 py-3 sm:py-4 flex justify-between items-center h-16 sm:h-auto">
+        <div class="flex items-center gap-2 sm:gap-6">
+            <a href="index.html" class="flex items-center gap-1 sm:gap-2 text-zinc-400 hover:text-black transition-colors">
                 <span class="material-symbols-outlined">arrow_back</span>
-                <span class="text-[0.6875rem] font-bold uppercase tracking-widest mt-0.5">Retour au Board</span>
+                <span class="text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-widest mt-0.5 hidden xs:inline">Retour</span>
             </a>
-            <div class="h-4 w-px bg-zinc-200"></div>
-            <h1 id="page-title" class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Détails de la Carte</h1>
+            <div class="h-4 w-px bg-zinc-200 hidden sm:block"></div>
+            <h1 id="page-title" class="text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant truncate max-w-[100px] sm:max-w-none">Détails</h1>
         </div>
-        <div class="flex items-center gap-3">
-            <button onclick="deleteThisCard()" class="text-[0.6875rem] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 px-4 py-2.5 transition-colors border border-red-500/20">
-                Supprimer
+        <div class="flex items-center gap-2">
+            <button onclick="deleteThisCard()" class="text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 px-3 sm:px-4 py-2 transition-colors border border-red-500/20 shrink-0">
+                Vider
             </button>
-            <button onclick="saveAll()" class="bg-black text-white px-6 py-2.5 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors shadow-lg">
-                Enregistrer
+            <button onclick="saveAll()" class="bg-black text-white px-4 sm:px-6 py-2 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors shadow-lg shrink-0">
+                Sauver
             </button>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-12">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+    <main class="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
             
             <!-- Sidebar: Main Card View -->
             <div class="lg:col-span-4 space-y-8">

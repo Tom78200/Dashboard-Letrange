@@ -288,6 +288,12 @@
             transition: all 0.15s ease;
         }
         .od-btn:hover { background: #eeeeee; }
+
+        /* Prevent horizontal scroll */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
     </style>
 </head>
 
@@ -339,11 +345,11 @@
                 </button>
                 <h2 class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Library</h2>
             </div>
-            <div class="flex items-center gap-3">
-                <button onclick="focusLibrarySearch()" class="material-symbols-outlined text-on-surface-variant hover:text-black cursor-pointer">search</button>
-                <input id="library-search" type="text" placeholder="Rechercher (nom, produit, héritage, twist...)"
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="focusLibrarySearch()" class="material-symbols-outlined text-on-surface-variant hover:text-black cursor-pointer text-[20px] sm:text-[24px]">search</button>
+                <input id="library-search" type="text" placeholder="Rechercher..."
                     oninput="onLibrarySearch(this.value)"
-                    class="w-56 sm:w-72 border border-zinc-200 px-3 py-1.5 text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-colors" />
+                    class="w-32 sm:w-56 lg:w-72 border border-zinc-200 px-3 py-1.5 text-[10px] sm:text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-all" />
             </div>
         </header>
 
