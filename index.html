@@ -241,14 +241,18 @@
                     class="w-32 sm:w-56 lg:w-72 border border-zinc-200 px-3 py-1.5 text-[10px] sm:text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-all" />
             </div>
         </header>
-        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:pt-16 lg:pb-0 space-y-12 sm:space-y-24 lg:space-y-32">
-            <!-- Column Labels (Desktop Only) -->
-            <div class="hidden lg:flex gap-12 mb-[-64px] relative z-10">
-                <div class="w-32 shrink-0"></div>
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pt-12 sm:pt-16 pb-0">
+            <!-- Column Labels Header (Desktop Align) -->
+            <div class="hidden lg:flex items-start gap-12 mb-8">
+                <!-- Spacer matching Week Number column -->
+                <div class="w-32 shrink-0 flex flex-col items-start pt-1">
+                    <span class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300">CALENDRIER</span>
+                </div>
+                <!-- Grid Labels matching Card columns -->
                 <div class="flex-1 grid grid-cols-3 gap-8">
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Mardi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Jeudi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Samedi</div>
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Mardi</div>
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Jeudi</div>
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Samedi</div>
                 </div>
             </div>
 
