@@ -1,0 +1,777 @@
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="icon" href="Logo_Letrange_Paris_1838.webp" type="image/webp">
+    <!-- 1. Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <!-- 2. Auth (Needs db.js) -->
+    <script src="auth.js"></script>
+    <title>Détails de la Carte — Letrange</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#000000",
+                        surface: "#f9f9f9",
+                        "on-surface": "#1a1c1c",
+                        "outline-variant": "#c6c6c6",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        
+        .premium-input {
+            width: 100%;
+            border: 1px solid #e2e2e2;
+            padding: 1rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+            background: #fff;
+        }
+        .premium-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+        
+        .gallery-slot {
+            aspect-ratio: 1;
+            border: 2px dashed #e2e2e2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .gallery-slot:hover { border-color: #000; background: #f3f3f3; }
+        .gallery-slot img { width: 100%; height: 100%; object-cover: cover; }
+        
+        .remove-img {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            width: 20px;
+            height: 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .gallery-slot:hover .remove-img { display: flex; }
+
+        /* Modal for library picker */
+        #lib-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+        #lib-modal-backdrop.open { display: flex; }
+        
+        .note-btn {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(255,255,255,0.9);
+            color: #000;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            z-index: 20;
+        }
+        .note-btn:hover { background: #000; color: #fff; }
+        .note-btn.active { background: #000; color: #fff; }
+        
+        .note-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            z-index: 30;
+        }
+        .note-overlay.open { display: flex; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 px-4 sm:px-8 lg:px-12 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <a href="index.html" class="flex items-center gap-2 text-zinc-400 hover:text-black transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+                <span class="text-[0.6875rem] font-bold uppercase tracking-widest mt-0.5">Retour au Board</span>
+            </a>
+            <div class="h-4 w-px bg-zinc-200"></div>
+            <h1 id="page-title" class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Détails de la Carte</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="deleteThisCard()" class="text-[0.6875rem] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 px-4 py-2.5 transition-colors border border-red-500/20">
+                Supprimer
+            </button>
+            <button onclick="saveAll()" class="bg-black text-white px-6 py-2.5 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors shadow-lg">
+                Enregistrer
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            <!-- Sidebar: Main Card View -->
+            <div class="lg:col-span-4 space-y-8">
+                <div class="bg-white p-2 border border-zinc-100 shadow-sm group relative">
+                    <div id="main-drop-zone" class="aspect-video bg-zinc-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden border-2 border-dashed border-zinc-100 hover:border-zinc-300 transition-all group/main relative" onclick="openPicker('main')">
+                        <div class="remove-img group-hover/main:flex hidden absolute top-2 right-2 z-20 w-8 h-8 bg-black/70 text-white items-center justify-center hover:bg-black" onclick="event.stopPropagation(); removeMainImg()">
+                            <span class="material-symbols-outlined text-[16px]">close</span>
+                        </div>
+                        <img id="main-img" class="hidden w-full h-full object-cover" />
+                        <div id="main-placeholder" class="flex flex-col items-center">
+                            <span class="material-symbols-outlined text-zinc-300 text-[32px] mb-2">add_photo_alternate</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Image Principale</span>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <input id="title-input" type="text" placeholder="Titre de la vidéo" class="text-xl font-medium tracking-tight w-full border-none p-0 focus:ring-0 placeholder:text-zinc-200" />
+                        <div class="flex items-center justify-between pt-4 border-t border-zinc-50">
+                            <input id="code-input" type="text" placeholder="Type (ex: Héritage)" class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400 w-1/2 border-none p-0 focus:ring-0 placeholder:text-zinc-200" />
+                            <span class="text-[10px] font-bold uppercase tracking-tighter text-zinc-200">ID: #<span id="card-id-display">---</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900 p-8 text-white space-y-6">
+                    <h3 class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-500">Objectifs de la vidéo</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-zinc-400 mb-2">Objectif Principal</label>
+                            <textarea id="obj-p" class="w-full bg-zinc-800 border-none text-sm p-4 h-24 focus:ring-1 focus:ring-white/20 placeholder:text-zinc-600" placeholder="Quel est le but premier ?"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-zinc-400 mb-2">Objectif Secondaire</label>
+                            <textarea id="obj-s" class="w-full bg-zinc-800 border-none text-sm p-4 h-24 focus:ring-1 focus:ring-white/20 placeholder:text-zinc-600" placeholder="Autres intentions..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="lg:col-span-8 space-y-12">
+                <!-- Prompt Section -->
+                <section class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">01</span>
+                        <h2 class="text-sm font-black uppercase tracking-widest">Le Prompt</h2>
+                    </div>
+                    <div class="relative bg-white border border-zinc-100 p-1">
+                        <textarea id="prompt-input" class="w-full min-h-[300px] border-none p-8 text-lg leading-relaxed focus:ring-0 placeholder:text-zinc-200" placeholder="Décrivez votre vision pour cette vidéo..."></textarea>
+                    </div>
+                </section>
+
+                <!-- Gallery Section -->
+                <section class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">02</span>
+                        <h2 class="text-sm font-black uppercase tracking-widest">Moodboard / Galerie <span class="text-zinc-400 font-normal ml-2">(Jusqu'à 5 images)</span></h2>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                        <div class="gallery-slot" id="slot-0" onclick="openPicker(0)">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">1</div>
+                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(0)"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
+                        </div>
+                        <div class="gallery-slot" id="slot-1" onclick="openPicker(1)">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">2</div>
+                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(1)"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
+                        </div>
+                        <div class="gallery-slot" id="slot-2" onclick="openPicker(2)">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">3</div>
+                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(2)"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
+                        </div>
+                        <div class="gallery-slot" id="slot-3" onclick="openPicker(3)">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">4</div>
+                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(3)"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
+                        </div>
+                        <div class="gallery-slot" id="slot-4" onclick="openPicker(4)">
+                            <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">5</div>
+                            <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(4)"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                            <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Corrective Section -->
+                <section class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">03</span>
+                        <h2 class="text-sm font-black uppercase tracking-widest">Correctif</h2>
+                    </div>
+                    <div class="relative bg-white border border-zinc-100 p-1">
+                        <textarea id="corrective-input" class="w-full min-h-[150px] border-none p-8 text-lg leading-relaxed focus:ring-0 placeholder:text-zinc-200 font-medium text-red-600" placeholder="Ajouter des remarques ou des correctifs ici..."></textarea>
+                    </div>
+                </section>
+
+                <!-- Video Result Section -->
+                <section class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">04</span>
+                        <h2 class="text-sm font-black uppercase tracking-widest">Résultat <span class="text-zinc-400 font-normal ml-2">(Vidéo finale)</span></h2>
+                    </div>
+                    
+                    <div id="video-container" class="bg-white border border-zinc-100 p-4">
+                        <div id="video-preview-box" class="hidden aspect-video bg-black relative mb-4">
+                            <video id="result-video-player" controls class="w-full h-full"></video>
+                        </div>
+                        
+                        <div id="video-upload-box" class="flex flex-col items-center justify-center border-2 border-dashed border-zinc-100 py-12 px-6 cursor-pointer hover:border-zinc-300 transition-all" onclick="document.getElementById('video-file-input').click()">
+                            <span class="material-symbols-outlined text-zinc-300 text-[48px] mb-4">movie</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Ajouter la vidéo finale</span>
+                            <span class="text-[9px] text-zinc-300 mt-2 uppercase">MP4, MOV, WEBM</span>
+                        </div>
+                        
+                        <input type="file" id="video-file-input" class="hidden" accept="video/*" onchange="handleVideoSelect(event)" />
+                        
+                        <div id="video-status" class="hidden mt-4 p-4 bg-zinc-50 border border-zinc-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-[18px] text-green-600">check_circle</span>
+                                    <span id="video-filename" class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Video.mp4</span>
+                                </div>
+                                <button onclick="removeVideo()" class="text-[9px] font-bold uppercase text-red-500 hover:bg-red-50 px-2 py-1 transition-colors">Retirer</button>
+                            </div>
+                            <div id="video-link-box" class="hidden">
+                                <label class="text-[8px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Identifiant BDD</label>
+                                <input type="text" id="video-public-url" readonly class="w-full bg-white border border-zinc-100 px-3 py-2 text-[9px] font-mono text-zinc-400 focus:outline-none" />
+                            </div>
+                        </div>
+                    </div>
+                <!-- Status Section -->
+                <section class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">05</span>
+                        <h2 class="text-sm font-black uppercase tracking-widest">Statut de la production</h2>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button id="status-review" onclick="setStatus('review')" class="flex-1 py-4 border border-zinc-200 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-zinc-50 translate-y-0 active:translate-y-0.5">
+                            À revoir
+                        </button>
+                        <button id="status-validated" onclick="setStatus('validated')" class="flex-1 py-4 border border-zinc-200 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-green-50 translate-y-0 active:translate-y-0.5">
+                            Validé
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Library Picker Modal -->
+    <div id="lib-modal-backdrop" onclick="if(event.target===this)closePicker()">
+        <div class="bg-white w-full max-w-2xl mx-4 p-8 relative flex flex-col max-h-[80vh]">
+            <button onclick="closePicker()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:bg-zinc-100 transition-colors">
+                <span class="material-symbols-outlined text-[20px] text-zinc-500">close</span>
+            </button>
+            <h3 class="text-sm font-black uppercase tracking-widest mb-6">Choisir depuis la bibliothèque</h3>
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-[18px] text-zinc-400">search</span>
+                <input id="picker-search" type="text" placeholder="Rechercher (nom, produit, héritage, twist...)"
+                    oninput="onPickerSearch(this.value)"
+                    class="w-full border border-zinc-200 px-3 py-2 text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-colors" />
+            </div>
+            
+            <div id="lib-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 overflow-y-auto pr-2">
+                <!-- Images stored in library -->
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-zinc-100 flex justify-between items-center">
+                <p class="text-[10px] uppercase font-bold text-zinc-400">Cliquez sur une image pour la sélectionner</p>
+                <div class="flex gap-2">
+                   <button onclick="document.getElementById('manual-file').click()" class="text-[10px] uppercase font-bold text-zinc-400 border border-zinc-200 px-4 py-2 hover:bg-zinc-50">Importer fichier</button>
+                   <input id="manual-file" type="file" class="hidden" onchange="handleManualFile(event)" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWeek = null;
+        let cardIdx = null;
+        let currentPickerSlot = null; // 'main' or 0-4
+        let pickerImages = [];
+        let pickerSearch = '';
+        let pendingVideoFile = null;
+        let currentVideoUrl = null;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const weekId = parseInt(urlParams.get('weekId'));
+        cardIdx = parseInt(urlParams.get('cardIdx'));
+
+        async function init() {
+            if (isNaN(weekId) || isNaN(cardIdx)) {
+                alert("Erreur: ID de carte manquant");
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            currentWeek = await dbGetWeekById(weekId);
+            if (!currentWeek) {
+                alert("Semaine non trouvée");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const card = currentWeek.cards[cardIdx];
+            
+            // Fill basics
+            document.getElementById('title-input').value = card.title || '';
+            document.getElementById('code-input').value = card.code || '';
+            document.getElementById('card-id-display').textContent = weekId + '-' + cardIdx;
+            
+            if (card.image) {
+                document.getElementById('main-img').src = card.image;
+                document.getElementById('main-img').classList.remove('hidden');
+                document.getElementById('main-placeholder').classList.add('hidden');
+            }
+
+            // Fill new fields
+            document.getElementById('prompt-input').value = card.prompt || '';
+            document.getElementById('corrective-input').value = card.corrective || '';
+            document.getElementById('obj-p').value = card.primaryObjective || '';
+            document.getElementById('obj-s').value = card.secondaryObjective || '';
+            
+            // Fill status
+            setStatus(card.status || 'review');
+            
+            // Load video if exists
+            if (card.resultVideo) {
+                if (card.resultVideo.length < 50) {
+                    // It's probably an ID, fetch from table
+                    const videoData = await dbGetVideoData(card.resultVideo);
+                    if (videoData) showVideoPreview(videoData, 'Résultat Table');
+                } else {
+                    // It's a URL or Base64 direct
+                    showVideoPreview(card.resultVideo);
+                }
+            }
+            
+            // Fill gallery
+            if (!card.gallery) card.gallery = [null, null, null, null, null];
+            
+            card.gallery.forEach((item, i) => {
+                const url = item && typeof item === 'object' ? item.url : item;
+                const prompt = item && typeof item === 'object' ? item.prompt : '';
+                
+                if (url) {
+                    updateSlotUI(i, url, prompt);
+                }
+            });
+            
+            renderLibrary();
+        }
+
+        // ── Library ───────────────────────────────────────────
+        async function renderLibrary() {
+            if (pickerImages.length === 0) {
+                pickerImages = await dbGetAllImages();
+            }
+            const grid = document.getElementById('lib-grid');
+            grid.innerHTML = '';
+
+            const query = String(pickerSearch || '').trim().toLowerCase();
+            const filtered = !query
+                ? pickerImages
+                : pickerImages.filter((img) => {
+                    const name = String(img.name || '').toLowerCase();
+                    const cat = String(img.cat || '').toLowerCase();
+                    const url = String(img.url || '').toLowerCase();
+                    return name.includes(query) || cat.includes(query) || url.includes(query);
+                });
+            
+            filtered.forEach(img => {
+                const div = document.createElement('div');
+                div.className = 'aspect-square bg-zinc-100 cursor-pointer overflow-hidden border border-transparent hover:border-black relative';
+                div.innerHTML = `
+                    <img src="${img.url}" class="w-full h-full object-cover" />
+                    <span class="absolute bottom-1 left-1 bg-black/75 text-white text-[8px] uppercase tracking-wider px-1.5 py-0.5 max-w-[85%] truncate">${img.name || img.cat || 'image'}</span>
+                `;
+                div.onclick = () => selectImage(img.url);
+                grid.appendChild(div);
+            });
+        }
+
+        async function onPickerSearch(value) {
+            pickerSearch = value || '';
+            await renderLibrary();
+        }
+
+        function openPicker(slot) {
+            currentPickerSlot = slot;
+            document.getElementById('lib-modal-backdrop').classList.add('open');
+            const searchInput = document.getElementById('picker-search');
+            if (searchInput) {
+                searchInput.value = '';
+                pickerSearch = '';
+                setTimeout(() => searchInput.focus(), 10);
+            }
+            renderLibrary();
+        }
+
+        function closePicker() {
+            document.getElementById('lib-modal-backdrop').classList.remove('open');
+        }
+
+        function selectImage(url) {
+            if (currentPickerSlot === 'main') {
+                const card = currentWeek.cards[cardIdx];
+                card.image = url;
+                document.getElementById('main-img').src = url;
+                document.getElementById('main-img').classList.remove('hidden');
+                document.getElementById('main-placeholder').classList.add('hidden');
+            } else {
+                const slot = currentPickerSlot;
+                if (!currentWeek.cards[cardIdx].gallery) currentWeek.cards[cardIdx].gallery = [null, null, null, null, null];
+                
+                // Initialize default object if needed
+                if (!currentWeek.cards[cardIdx].gallery[slot] || typeof currentWeek.cards[cardIdx].gallery[slot] !== 'object') {
+                    currentWeek.cards[cardIdx].gallery[slot] = { url: null, prompt: '' };
+                }
+                
+                currentWeek.cards[cardIdx].gallery[slot].url = url;
+                updateSlotUI(slot, url);
+                // Auto-save removed as per user request
+            }
+            closePicker();
+        }
+
+        async function handleManualFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const dataUrl = ev.target.result;
+                selectImage(dataUrl);
+
+                // Immediately add to Library so it appears everywhere (picker, search, other pages).
+                const card = currentWeek?.cards?.[cardIdx] || {};
+                const cat = (card.code || 'produit').toLowerCase();
+                const inferredName = file.name ? file.name.replace(/\.[^.]+$/, '') : '';
+                if (typeof dbAddImage === 'function') {
+                    await dbAddImage(dataUrl, cat, inferredName);
+                    pickerImages = []; // force reload
+                    await renderLibrary();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateSlotUI(slot, url, prompt = '') {
+            const slotEl = document.getElementById(`slot-${slot}`);
+            if (!url) {
+                slotEl.innerHTML = `
+                    <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">${slot + 1}</div>
+                    <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${slot})"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                    <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
+                `;
+                return;
+            }
+
+            const isActive = (prompt && prompt.trim().length > 0);
+            slotEl.innerHTML = `
+                <div class="absolute top-2 left-2 text-[10px] font-bold text-white shadow-sm pointer-events-none z-10">${slot + 1}</div>
+                <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${slot})"><span class="material-symbols-outlined text-[12px]">close</span></div>
+                
+                <img src="${url}" class="w-full h-full object-cover" />
+                
+                <div class="note-btn ${isActive ? 'active' : ''}" onclick="event.stopPropagation(); toggleNote(${slot})">
+                    <span class="material-symbols-outlined text-[16px]">${isActive ? 'sticky_note_2' : 'add_notes'}</span>
+                </div>
+                
+                <div class="note-overlay" id="note-overlay-${slot}" onclick="event.stopPropagation()">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] font-bold uppercase tracking-widest">Note / Prompt</span>
+                        <button onclick="toggleNote(${slot})" class="text-zinc-400 hover:text-black mt-[-2px]">
+                            <span class="material-symbols-outlined text-[14px]">close</span>
+                        </button>
+                    </div>
+                    <textarea id="prompt-${slot}" class="flex-1 bg-zinc-50 border-none p-2 text-[10px] focus:ring-0 resize-none" placeholder="Écrire ici...">${prompt}</textarea>
+                </div>
+            `;
+        }
+
+        function toggleNote(slot) {
+            const overlay = document.getElementById(`note-overlay-${slot}`);
+            if (overlay) overlay.classList.toggle('open');
+        }
+
+        function removeMainImg() {
+            if (!confirm("Retirer l'image principale ?")) return;
+            document.getElementById('main-img').src = '';
+            document.getElementById('main-img').classList.add('hidden');
+            document.getElementById('main-placeholder').classList.remove('hidden');
+            currentWeek.cards[cardIdx].image = '';
+        }
+
+        function removeGalleryImg(slot) {
+            if (!currentWeek.cards[cardIdx].gallery) return;
+            
+            // Clear content
+            if (currentWeek.cards[cardIdx].gallery[slot] && typeof currentWeek.cards[cardIdx].gallery[slot] === 'object') {
+                currentWeek.cards[cardIdx].gallery[slot].url = null;
+                currentWeek.cards[cardIdx].gallery[slot].prompt = '';
+            } else {
+                currentWeek.cards[cardIdx].gallery[slot] = { url: null, prompt: '' };
+            }
+            
+            updateSlotUI(slot, null);
+        }
+
+        // ── Video (Table Storage Method) ───────────────────
+        function handleVideoSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const base64 = ev.target.result;
+                pendingVideoFile = base64; // We store the base64 string
+                showVideoPreview(base64, file.name);
+                
+                const statusEl = document.getElementById('video-status');
+                const filenameEl = document.getElementById('video-filename');
+                statusEl.classList.remove('hidden');
+                filenameEl.textContent = file.name + " (Pret pour enregistrement)";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showVideoPreview(url, name = 'Résultat Final') {
+            currentVideoUrl = url;
+            document.getElementById('video-preview-box').classList.remove('hidden');
+            document.getElementById('video-upload-box').classList.add('hidden');
+            document.getElementById('video-status').classList.remove('hidden');
+            document.getElementById('result-video-player').src = url;
+            document.getElementById('video-filename').textContent = name;
+            
+            // Show ID if it's a short string (UUID)
+            if (url && url.length < 50) {
+                document.getElementById('video-link-box').classList.remove('hidden');
+                document.getElementById('video-public-url').value = url;
+            } else {
+                document.getElementById('video-link-box').classList.add('hidden');
+            }
+        }
+
+        function removeVideo() {
+            if (currentVideoUrl || pendingVideoFile) {
+                if (!confirm("Voulez-vous vraiment supprimer cette vidéo ?")) return;
+            }
+            pendingVideoFile = null;
+            currentVideoUrl = null;
+            document.getElementById('video-preview-box').classList.add('hidden');
+            document.getElementById('video-upload-box').classList.remove('hidden');
+            document.getElementById('video-status').classList.add('hidden');
+            document.getElementById('result-video-player').src = '';
+            document.getElementById('video-file-input').value = '';
+        }
+
+        async function deleteThisCard() {
+            if (!confirm("Voulez-vous vraiment vider le contenu de cette carte ?\n\nCette action est irréversible et supprimera également la vidéo associée de la base de données.")) return;
+
+            const btn = document.querySelector('button[onclick="deleteThisCard()"]');
+            btn.textContent = "Nettoyage...";
+            btn.disabled = true;
+
+            try {
+                // 1. Fetch LATEST state to get the actual video ID
+                const latestWeek = await dbGetWeekById(currentWeek.id);
+                if (!latestWeek) throw new Error("Semaine introuvable");
+                
+                const targetCard = latestWeek.cards[cardIdx];
+
+                // 2. Delete correct video from DB
+                if (targetCard && targetCard.resultVideo && targetCard.resultVideo.length < 50) {
+                    await dbDeleteVideoData(targetCard.resultVideo);
+                }
+
+                // 3. Reset card slots in cloud data
+                latestWeek.cards[cardIdx] = {
+                    code: targetCard?.code || '' 
+                };
+                
+                const success = await dbUpdateWeek(latestWeek);
+                if (success) {
+                    alert("Le contenu de la carte a été vidé avec succès.");
+                    window.location.href = 'index.html';
+                } else {
+                    throw new Error(dbGetLastError() || "Erreur lors de la mise à jour de la semaine.");
+                }
+            } catch (err) {
+                console.error("Deletion failed:", err);
+                alert("Échec de la suppression: " + err.message);
+                btn.textContent = "Supprimer";
+                btn.disabled = false;
+            }
+        }
+
+        // ── Status ──────────────────────────────────────────
+        let currentStatus = 'review';
+        function setStatus(status) {
+            currentStatus = status;
+            const reviewBtn = document.getElementById('status-review');
+            const validBtn = document.getElementById('status-validated');
+            
+            if (status === 'validated') {
+                // Validated state
+                validBtn.className = "flex-1 py-4 border border-green-600 bg-green-600 text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all translate-y-0";
+                
+                // Review state (off)
+                reviewBtn.className = "flex-1 py-4 border border-zinc-200 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] transition-all translate-y-0 hover:bg-zinc-50";
+            } else {
+                // Review state (active)
+                reviewBtn.className = "flex-1 py-4 border border-zinc-900 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all translate-y-0";
+                
+                // Validated state (off)
+                validBtn.className = "flex-1 py-4 border border-zinc-200 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] transition-all translate-y-0 hover:bg-green-50";
+            }
+        }
+
+        // ── Save ──────────────────────────────────────────────
+        async function saveAll() {
+            const btn = document.querySelector('button[onclick="saveAll()"]');
+            const originalText = btn.textContent;
+            
+            try {
+                btn.textContent = "Téléchargement...";
+                btn.disabled = true;
+
+                const card = currentWeek.cards[cardIdx];
+                card.title = document.getElementById('title-input').value;
+                card.code = document.getElementById('code-input').value;
+                card.prompt = document.getElementById('prompt-input').value;
+                card.corrective = document.getElementById('corrective-input').value;
+                card.primaryObjective = document.getElementById('obj-p').value;
+                card.secondaryObjective = document.getElementById('obj-s').value;
+                card.status = currentStatus;
+
+                // Handle Video Table Save
+                if (pendingVideoFile) {
+                    btn.textContent = "Sauvegarde vidéo...";
+                    // pendingVideoFile contains the base64 string here
+                    const videoId = await dbSaveVideoData(pendingVideoFile);
+                    if (videoId) {
+                        card.resultVideo = videoId;
+                        pendingVideoFile = null; 
+                        showVideoPreview(videoId); // Show the ID in UI
+                    } else {
+                        const dbErr = (typeof dbGetLastError === 'function' ? dbGetLastError() : 'Erreur inconnue');
+                        throw new Error(`Échec de sauvegarde vidéo: ${dbErr}`);
+                    }
+                } else if (!currentVideoUrl) {
+                    card.resultVideo = null;
+                }
+                
+                btn.textContent = "Enregistrement texte...";
+
+                if (typeof dbOptimizeImageDataUrl === 'function') {
+                    card.image = await dbOptimizeImageDataUrl(card.image);
+                }
+
+            // Ensure every selected image also exists in the library table,
+            // so persistence is consistent between weeks and library.
+            const normalizedCat = (card.code || 'produit').toLowerCase();
+            const existingImages = await dbGetAllImages();
+            const existingUrls = new Set((existingImages || []).map((img) => img.url));
+
+            async function ensureImageInLibrary(url) {
+                if (!url) return;
+                if (existingUrls.has(url)) return;
+                await dbAddImage(url, normalizedCat);
+                existingUrls.add(url);
+            }
+
+            await ensureImageInLibrary(card.image);
+            
+            card.gallery.forEach((item, i) => {
+                const url = item && typeof item === 'object' ? item.url : item;
+                // Get prompt from UI if it exists, otherwise from data
+                const promptEl = document.getElementById(`prompt-${i}`);
+                const promptVal = promptEl ? promptEl.value : (item && typeof item === 'object' ? item.prompt : '');
+                
+                card.gallery[i] = { url, prompt: promptVal };
+            });
+
+            for (const item of card.gallery) {
+                const url = item && typeof item === 'object' ? item.url : item;
+                const optimized = (typeof dbOptimizeImageDataUrl === 'function') ? await dbOptimizeImageDataUrl(url) : url;
+                if (item && typeof item === 'object') {
+                    item.url = optimized;
+                }
+                await ensureImageInLibrary(optimized);
+            }
+            
+            const updateOk = await dbUpdateWeek(currentWeek);
+            if (!updateOk) {
+                btn.textContent = "Erreur BDD";
+                btn.disabled = false;
+                btn.classList.replace('bg-black', 'bg-red-600');
+                const reason = (typeof dbGetLastError === 'function' ? dbGetLastError() : '') || 'Cause inconnue';
+                alert(`Sauvegarde impossible: ${reason}`);
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.replace('bg-red-600', 'bg-black');
+                }, 2200);
+                return;
+            }
+            
+            // Visual feedback
+            btn.textContent = "C'est enregistré !";
+            btn.disabled = false;
+            btn.classList.replace('bg-black', 'bg-green-600');
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.replace('bg-green-600', 'bg-black');
+            }, 2000);
+        } catch (err) {
+            btn.textContent = "Erreur";
+            btn.disabled = false;
+            alert(`Erreur: ${err.message}`);
+        }
+    }
+
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="icon" href="Logo_Letrange_Paris_1838.webp" type="image/webp">
+    <!-- 1. Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="db.js"></script>
+    <!-- 2. Auth (Needs db.js) -->
+    <script src="auth.js"></script>
+    <title>Library — Content Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#5e5e5e",
+                        "tertiary-container": "#737575",
+                        "on-tertiary": "#e2e2e2",
+                        "outline": "#777777",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#ababab",
+                        "inverse-surface": "#2f3131",
+                        "on-secondary-fixed-variant": "#3b3b3b",
+                        "inverse-primary": "#c6c6c6",
+                        "primary": "#000000",
+                        "surface-tint": "#5e5e5e",
+                        "primary-fixed-dim": "#474747",
+                        "surface-dim": "#dadada",
+                        "primary-container": "#3b3b3b",
+                        "on-surface": "#1a1c1c",
+                        "surface-bright": "#f9f9f9",
+                        "on-tertiary-fixed-variant": "#e2e2e2",
+                        "outline-variant": "#c6c6c6",
+                        "surface-container-low": "#f3f3f4",
+                        "on-primary-container": "#ffffff",
+                        "primary-fixed": "#5e5e5e",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#474747",
+                        "on-background": "#1a1c1c",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#1b1b1b",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#ffffff",
+                        "surface-variant": "#e2e2e2",
+                        "on-error-container": "#410002",
+                        "surface-container": "#eeeeee",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface": "#f9f9f9",
+                        "surface-container-high": "#e8e8e8",
+                        "tertiary-fixed": "#5d5f5f",
+                        "on-primary-fixed-variant": "#e2e2e2",
+                        "tertiary": "#3a3c3c",
+                        "background": "#f9f9f9",
+                        "on-primary": "#e2e2e2",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "on-tertiary-container": "#ffffff",
+                        "secondary-fixed": "#c6c6c6",
+                        "on-tertiary-fixed": "#ffffff",
+                        "secondary-container": "#d4d4d4",
+                        "tertiary-fixed-dim": "#454747",
+                        "inverse-on-surface": "#f0f1f1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Sidebar overlay */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 40;
+            backdrop-filter: blur(2px);
+        }
+        #sidebar-overlay.active { display: block; }
+
+        #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (max-width: 1023px) {
+            #sidebar { transform: translateX(-100%); z-index: 50; }
+            #sidebar.open { transform: translateX(0); }
+        }
+
+        #hamburger-btn { display: none; }
+        @media (max-width: 1023px) {
+            #hamburger-btn { display: flex; }
+        }
+
+        /* Category filter pill */
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 1rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid #c6c6c6;
+            background: transparent;
+            color: #474747;
+            transition: all 0.15s ease;
+        }
+        .filter-pill:hover { background: #eeeeee; }
+        .filter-pill.active {
+            background: #000;
+            color: #fff;
+            border-color: #000;
+        }
+
+        /* Image card */
+        .img-card {
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid rgba(198,198,198,0.2);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .img-card:hover { border-color: rgba(198,198,198,0.6); }
+        .img-card .delete-btn, .img-card .edit-btn {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 2px;
+            opacity: 0;
+            z-index: 10;
+        }
+        .delete-btn { top: 8px; right: 8px; }
+        .edit-btn { top: 8px; right: 40px; }
+        .img-card:hover .delete-btn, .img-card:hover .edit-btn { opacity: 1; }
+        .delete-btn:hover { background: #ef4444; }
+        .edit-btn:hover { background: #3b82f6; }
+        .img-card .cat-badge {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: #000;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 2px 8px;
+        }
+
+        /* Modal */
+        #modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+        #modal-backdrop.open { display: flex; }
+
+        /* Drop zone */
+        #drop-zone {
+            border: 2px dashed #c6c6c6;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        #drop-zone.drag-over {
+            border-color: #000;
+            background: #f3f3f4;
+        }
+
+        /* Cat radio buttons */
+        .cat-radio input[type="radio"] { display: none; }
+        .cat-radio label {
+            display: block;
+            padding: 0.5rem 1rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid #c6c6c6;
+            color: #474747;
+            transition: all 0.15s;
+            text-align: center;
+        }
+        .cat-radio input[type="radio"]:checked + label {
+            background: #000;
+            color: #fff;
+            border-color: #000;
+        }
+
+        /* OneDrive modal */
+        #onedrive-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+        #onedrive-modal.open { display: flex; }
+
+        .od-thumb {
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent;
+            overflow: hidden;
+            transition: border-color 0.15s;
+        }
+        .od-thumb:hover { opacity: 0.85; }
+        .od-thumb.selected { border-color: #000; }
+        .od-thumb .od-check {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            background: #000;
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .od-thumb.selected .od-check { display: flex; }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e2e2;
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .od-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid #c6c6c6;
+            background: transparent;
+            color: #474747;
+            transition: all 0.15s ease;
+        }
+        .od-btn:hover { background: #eeeeee; }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface">
+
+    <!-- Sidebar overlay -->
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed left-0 top-0 h-full flex flex-col pt-8 bg-[#F9F9F9] border-r border-zinc-200/50 w-64">
+        <div class="px-8 mb-12">
+            <img src="Logo_Letrange_Paris_1838.webp" alt="LÉTRANGE Paris 1838" class="w-full h-auto dark:invert" />
+        </div>
+        <nav class="flex-1 px-4 space-y-1">
+            <a class="text-zinc-400 hover:bg-zinc-100 flex items-center gap-3 py-2 px-4 transition-all uppercase tracking-widest text-[0.6875rem]"
+                href="index.html">
+                <span class="material-symbols-outlined text-[18px]">grid_view</span>
+                Board
+            </a>
+            <!-- Active: Library -->
+            <a class="text-black font-bold flex items-center gap-3 py-2 px-4 bg-zinc-200/50 transition-all uppercase tracking-widest text-[0.6875rem]"
+                href="library.html">
+                <span class="material-symbols-outlined text-[18px]">video_library</span>
+                Library
+            </a>
+        </nav>
+        <div class="p-8 space-y-3">
+            <button onclick="resetBoard()"
+                class="w-full border border-zinc-200 text-zinc-400 py-3 px-4 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all">
+                Réinitialiser
+            </button>
+            <button onclick="dbLogout()"
+                class="w-full border border-zinc-200 text-zinc-400 py-3 px-4 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-100 hover:text-black transition-all">
+                Déconnexion
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="lg:ml-64 min-h-screen bg-surface">
+
+        <!-- Header -->
+        <header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-zinc-200/50 px-4 sm:px-8 lg:px-12 py-4 lg:py-6 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button id="hamburger-btn" onclick="openSidebar()"
+                    class="items-center justify-center w-9 h-9 hover:bg-zinc-100 transition-colors">
+                    <span class="material-symbols-outlined text-[22px] text-on-surface-variant">menu</span>
+                </button>
+                <h2 class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Library</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="focusLibrarySearch()" class="material-symbols-outlined text-on-surface-variant hover:text-black cursor-pointer">search</button>
+                <input id="library-search" type="text" placeholder="Rechercher (nom, produit, héritage, twist...)"
+                    oninput="onLibrarySearch(this.value)"
+                    class="w-56 sm:w-72 border border-zinc-200 px-3 py-1.5 text-xs uppercase tracking-wider focus:outline-none focus:border-black transition-colors" />
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16">
+
+            <!-- Top bar: count + filters -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+                <div class="flex items-center gap-4">
+                    <p id="img-count" class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-zinc-400">0 image</p>
+                    <button onclick="openOdModal()" class="od-btn">
+                        <span class="material-symbols-outlined text-[16px]">cloud_download</span>
+                        OneDrive
+                    </button>
+                </div>
+                <!-- Filter pills -->
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-pill active" data-cat="tous" onclick="setFilter('tous', this)">Tous</button>
+                    <button class="filter-pill" data-cat="héritage" onclick="setFilter('héritage', this)">Héritage</button>
+                    <button class="filter-pill" data-cat="produit" onclick="setFilter('produit', this)">Produit</button>
+                    <button class="filter-pill" data-cat="twist" onclick="setFilter('twist', this)">Twist</button>
+                </div>
+            </div>
+
+            <!-- Image grid -->
+            <div id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <!-- images inserted by JS -->
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="flex flex-col items-center justify-center py-32 text-center">
+                <div class="w-20 h-20 border-2 border-dashed border-zinc-200 flex items-center justify-center mb-6">
+                    <span class="material-symbols-outlined text-[36px] text-zinc-300">photo_library</span>
+                </div>
+                <p class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Aucune image</p>
+                <p class="text-xs text-zinc-300 mb-8">Ajoutez votre première image à la bibliothèque</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="openModal()"
+                        class="bg-black text-white px-6 py-3 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">add</span>
+                        Ajouter une image
+                    </button>
+                    <button onclick="openOdModal()"
+                        class="border border-zinc-300 text-zinc-600 px-6 py-3 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-100 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">cloud_download</span>
+                        Importer depuis OneDrive
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FAB -->
+    <div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 lg:bottom-12 lg:right-12">
+        <button onclick="openModal()"
+            class="bg-black text-white h-14 w-14 lg:h-16 lg:w-16 flex items-center justify-center hover:scale-105 transition-transform shadow-xl">
+            <span class="material-symbols-outlined text-[22px] lg:text-[24px]">add</span>
+        </button>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal-backdrop" onclick="handleBackdropClick(event)">
+        <div id="modal" class="bg-white w-full max-w-md mx-4 p-8 relative">
+            <!-- Close -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:bg-zinc-100 transition-colors">
+                <span class="material-symbols-outlined text-[20px] text-zinc-500">close</span>
+            </button>
+
+            <h3 class="text-sm font-black uppercase tracking-widest mb-8">Ajouter une image</h3>
+
+            <!-- Drop zone -->
+            <div id="drop-zone"
+                class="h-48 flex flex-col items-center justify-center cursor-pointer mb-6"
+                onclick="handleDropZoneClick(event)"
+                ondragover="handleDragOver(event)"
+                ondragleave="handleDragLeave(event)"
+                ondrop="handleDrop(event)">
+                <div id="drop-preview" class="w-full h-full flex flex-col items-center justify-center">
+                    <span class="material-symbols-outlined text-[36px] text-zinc-300 mb-3">upload</span>
+                    <p class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400">Glisser ou cliquer</p>
+                    <p class="text-xs text-zinc-300 mt-1">JPG, PNG, WEBP</p>
+                </div>
+                <div class="flex gap-2 mb-6">
+                    <button type="button" onclick="event.stopPropagation(); document.getElementById('file-input').click()" class="flex-1 border border-zinc-200 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-colors">Fichier</button>
+                    <button type="button" onclick="event.stopPropagation(); document.getElementById('folder-input').click()" class="flex-1 border border-zinc-200 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-colors">Dossier entier</button>
+                </div>
+                <input id="file-input" type="file" accept="image/*" class="hidden" onchange="handleFileSelect(event)" />
+                <input id="folder-input" type="file" webkitdirectory directory multiple class="hidden" onchange="handleFolderSelect(event)" />
+            </div>
+            
+            <div id="import-status" class="hidden mb-6 p-4 bg-zinc-50 border border-zinc-100 text-center">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500" id="status-text">Importation en cours...</p>
+            </div>
+
+            <!-- Preview -->
+            <img id="img-preview" class="hidden w-full h-48 object-cover mb-6" />
+
+            <!-- Catégorie -->
+            <p class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400 mb-3">Catégorie</p>
+            <div class="grid grid-cols-3 gap-2 mb-8">
+                <div class="cat-radio">
+                    <input type="radio" name="category" id="cat-heritage" value="héritage" />
+                    <label for="cat-heritage">Héritage</label>
+                </div>
+                <div class="cat-radio">
+                    <input type="radio" name="category" id="cat-produit" value="produit" checked />
+                    <label for="cat-produit">Produit</label>
+                </div>
+                <div class="cat-radio">
+                    <input type="radio" name="category" id="cat-twist" value="twist" />
+                    <label for="cat-twist">Twist</label>
+                </div>
+            </div>
+
+            <p class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400 mb-2">Nom de l'image</p>
+            <input id="image-name-input" type="text" placeholder="Ex: Produit cuir noir"
+                class="w-full border border-zinc-200 px-4 py-3 text-sm mb-8 focus:outline-none focus:border-black transition-colors" />
+
+            <!-- Submit -->
+            <button id="submit-btn" onclick="addImage()"
+                class="w-full bg-black text-white py-3 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled>
+                Ajouter à la bibliothèque
+            </button>
+        </div>
+    </div>
+
+    <!-- OneDrive Import Modal -->
+    <div id="onedrive-modal" onclick="handleOdBackdropClick(event)">
+        <div class="bg-white w-full max-w-2xl mx-4 p-8 relative max-h-[90vh] flex flex-col">
+            <button onclick="closeOdModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:bg-zinc-100 transition-colors z-10">
+                <span class="material-symbols-outlined text-[20px] text-zinc-500">close</span>
+            </button>
+
+            <h3 class="text-sm font-black uppercase tracking-widest mb-8">Importer depuis OneDrive</h3>
+
+            <!-- Link input -->
+            <div class="mb-6">
+                <label class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Lien de partage OneDrive</label>
+                <div class="flex gap-2">
+                    <input id="od-link" type="url" placeholder="https://1drv.ms/f/..." class="flex-1 border border-zinc-200 px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors" />
+                    <button id="od-load-btn" onclick="loadOneDriveFolder()" class="bg-black text-white px-6 py-3 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors whitespace-nowrap">
+                        Charger
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category -->
+            <p class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400 mb-3">Catégorie pour l'import</p>
+            <div class="grid grid-cols-3 gap-2 mb-6">
+                <div class="cat-radio">
+                    <input type="radio" name="od-category" id="od-cat-heritage" value="héritage" />
+                    <label for="od-cat-heritage">Héritage</label>
+                </div>
+                <div class="cat-radio">
+                    <input type="radio" name="od-category" id="od-cat-produit" value="produit" checked />
+                    <label for="od-cat-produit">Produit</label>
+                </div>
+                <div class="cat-radio">
+                    <input type="radio" name="od-category" id="od-cat-twist" value="twist" />
+                    <label for="od-cat-twist">Twist</label>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div id="od-status" class="hidden mb-6 items-center gap-3">
+                <div class="spinner"></div>
+                <p class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400">Chargement du dossier…</p>
+            </div>
+
+            <!-- Error -->
+            <div id="od-error" class="hidden mb-6 border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm"></div>
+
+            <!-- Image grid (scrollable) -->
+            <div id="od-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 mb-6 overflow-y-auto max-h-[40vh]"></div>
+
+            <!-- Select all / Import -->
+            <div id="od-actions" class="hidden items-center justify-between pt-4 border-t border-zinc-100">
+                <button onclick="toggleSelectAll()" class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400 hover:text-black transition-colors">
+                    Tout sélectionner
+                </button>
+                <button id="od-import-btn" onclick="importSelected()" class="bg-black text-white px-6 py-3 text-[0.6875rem] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                    Importer (0)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm p-8 relative">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-zinc-400 hover:text-black">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <h3 class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] mb-8">Modifier l'image</h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-2">Nom / Produit</label>
+                    <input id="edit-name" type="text" class="w-full border-b border-zinc-200 py-2 focus:border-black outline-none text-xs uppercase tracking-widest" />
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-2">Catégorie</label>
+                    <select id="edit-cat" class="w-full border-b border-zinc-200 py-2 focus:border-black outline-none text-xs uppercase tracking-widest appearance-none bg-transparent cursor-pointer">
+                        <option value="héritage">HÉRTIGAGE</option>
+                        <option value="produit">PRODUIT</option>
+                        <option value="twist">TWIST</option>
+                    </select>
+                </div>
+                <button onclick="saveEdit()" id="save-edit-btn" class="w-full bg-black text-white py-4 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────────
+        let images = [];
+        let allImagesCache = [];
+        let currentFilter = 'tous';
+        let pendingDataUrl = null;
+        let currentSearch = '';
+        let optimisticImages = [];
+
+        async function initLibrary() {
+            if (typeof migrateToCloud === 'function') await migrateToCloud();
+            await refreshImages();
+        }
+
+        async function refreshImages() {
+            allImagesCache = await dbGetAllImages();
+            let source = currentFilter === 'tous'
+                ? allImagesCache
+                : allImagesCache.filter((img) => (img.cat || '').toLowerCase() === String(currentFilter).toLowerCase());
+
+            // Keep newly added images visible until cloud read catches up.
+            if (optimisticImages.length > 0) {
+                const cloudUrls = new Set((source || []).map((img) => img.url));
+                optimisticImages = optimisticImages.filter((img) => !cloudUrls.has(img.url));
+                source = [...optimisticImages, ...source];
+            }
+
+            const query = currentSearch.trim().toLowerCase();
+            images = !query
+                ? source
+                : source.filter((img) => {
+                    const name = String(img.name || '').toLowerCase();
+                    const cat = String(img.cat || '').toLowerCase();
+                    const url = String(img.url || '').toLowerCase();
+                    return name.includes(query) || cat.includes(query) || url.includes(query);
+                });
+            renderGrid();
+        }
+
+        function focusLibrarySearch() {
+            const input = document.getElementById('library-search');
+            if (input) input.focus();
+        }
+
+        async function onLibrarySearch(value) {
+            currentSearch = value || '';
+            let source = currentFilter === 'tous'
+                ? allImagesCache
+                : allImagesCache.filter((img) => (img.cat || '').toLowerCase() === String(currentFilter).toLowerCase());
+            const query = currentSearch.trim().toLowerCase();
+            images = !query
+                ? source
+                : source.filter((img) => {
+                    const name = String(img.name || '').toLowerCase();
+                    const cat = String(img.cat || '').toLowerCase();
+                    const url = String(img.url || '').toLowerCase();
+                    return name.includes(query) || cat.includes(query) || url.includes(query);
+                });
+            renderGrid();
+        }
+
+        // ── Sidebar ────────────────────────────────────────────
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebar-overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        window.addEventListener('resize', () => { if (window.innerWidth >= 1024) closeSidebar(); });
+
+        // ── Filter ─────────────────────────────────────────────
+        async function setFilter(cat, btn) {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            await onLibrarySearch(currentSearch);
+        }
+
+        // ── Render ─────────────────────────────────────────────
+        async function renderGrid() {
+            const grid = document.getElementById('image-grid');
+            const emptyState = document.getElementById('empty-state');
+            const countEl = document.getElementById('img-count');
+
+            const allImages = allImagesCache;
+            if (currentSearch.trim()) {
+                countEl.textContent = `${images.length} / ${allImages.length} images`;
+            } else {
+                countEl.textContent = allImages.length + (allImages.length <= 1 ? ' image' : ' images');
+            }
+
+            grid.innerHTML = '';
+
+            if (images.length === 0) {
+                emptyState.style.display = 'flex';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            images.forEach((img) => {
+                const card = document.createElement('div');
+                card.className = 'img-card aspect-square';
+                card.innerHTML = `
+                    <img src="${img.url}" class="w-full h-full object-cover" alt="${img.cat}" />
+                    <button class="edit-btn" onclick="openEditModal('${img.id}', event)">
+                        <span class="material-symbols-outlined text-[14px]">edit</span>
+                    </button>
+                    <button class="delete-btn" onclick="deleteImage('${img.id}', event)">
+                        <span class="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                    <span class="absolute top-2 left-2 bg-white/90 text-black text-[9px] font-bold uppercase tracking-widest px-2 py-1 max-w-[70%] truncate">${img.name || 'Sans nom'}</span>
+                    <span class="cat-badge">${img.cat}</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // ── Delete ─────────────────────────────────────────────
+        async function deleteImage(id, e) {
+            e.stopPropagation();
+            if (!confirm('Voulez-vous supprimer cette image de la bibliothèque ?')) return;
+            
+            // Optimistic update: remove from cache immediately
+            allImagesCache = allImagesCache.filter(img => String(img.id) !== String(id));
+            onLibrarySearch(currentSearch);
+
+            const ok = await dbDeleteImage(id);
+            if (!ok) {
+                const reason = (typeof dbGetLastError === 'function' ? dbGetLastError() : '') || 'Suppression desactivee';
+                alert(reason);
+                // Rollback if failed
+                await refreshImages();
+                return;
+            }
+            // Silent refresh to be sure
+            await refreshImages();
+        }
+
+        let currentEditingImgId = null;
+        function openEditModal(id, e) {
+            if (e) e.stopPropagation();
+            const img = allImagesCache.find(i => String(i.id) === String(id));
+            if (!img) return;
+            currentEditingImgId = id;
+            document.getElementById('edit-name').value = img.name || '';
+            document.getElementById('edit-cat').value = (img.cat || 'produit').toLowerCase();
+            document.getElementById('edit-modal-backdrop').classList.replace('hidden', 'flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal-backdrop').classList.replace('flex', 'hidden');
+            currentEditingImgId = null;
+        }
+
+        async function saveEdit() {
+            if (!currentEditingImgId) return;
+            const btn = document.getElementById('save-edit-btn');
+            const originalText = btn.textContent;
+            btn.textContent = "ENREGISTREMENT...";
+            btn.disabled = true;
+
+            const name = document.getElementById('edit-name').value.trim();
+            const cat = document.getElementById('edit-cat').value;
+
+            const imgIndex = allImagesCache.findIndex(i => String(i.id) === String(currentEditingImgId));
+            if (imgIndex !== -1) {
+                const img = allImagesCache[imgIndex];
+                const oldName = img.name;
+                const oldCat = img.cat;
+                
+                // Optimistic update
+                img.name = name;
+                img.cat = cat;
+                onLibrarySearch(currentSearch);
+
+                const success = await dbUpdateImage(img);
+                if (success) {
+                    closeEditModal();
+                    await refreshImages();
+                } else {
+                    alert("Erreur lors de la sauvegarde: " + (dbGetLastError() || 'Inconnue'));
+                    // Rollback
+                    img.name = oldName;
+                    img.cat = oldCat;
+                    renderGrid();
+                }
+            }
+
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+
+        async function resetBoard() {
+            if (!confirm('ATTENTION: Cela va supprimer TOUTES les semaines ET TOUTES les images (cloud + local). Continuer ?')) return;
+            const ok = await dbWipeAllData();
+            if (!ok) {
+                const reason = (typeof dbGetLastError === 'function' ? dbGetLastError() : '') || 'Reset desactive';
+                alert(reason);
+                return;
+            }
+            images = [];
+            renderGrid();
+            alert('Nettoyage complet terminé.');
+        }
+
+        // ── Modal ──────────────────────────────────────────────
+        function openModal() {
+            document.getElementById('modal-backdrop').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            resetModal();
+        }
+        function closeModal() {
+            document.getElementById('modal-backdrop').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function handleBackdropClick(e) {
+            if (e.target === document.getElementById('modal-backdrop')) closeModal();
+        }
+        function resetModal() {
+            pendingDataUrl = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('img-preview').classList.add('hidden');
+            document.getElementById('drop-preview').style.display = 'flex';
+            document.getElementById('submit-btn').disabled = true;
+            document.querySelector('input[name="category"][value="produit"]').checked = true;
+            document.getElementById('image-name-input').value = '';
+        }
+
+        // ── File handling ──────────────────────────────────────
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) loadFile(file);
+        }
+
+        async function handleFolderSelect(e) {
+            const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+            if (files.length === 0) {
+                alert("Aucune image trouvée dans ce dossier.");
+                return;
+            }
+            
+            const cat = document.querySelector('input[name="category"]:checked').value;
+            const statusDiv = document.getElementById('import-status');
+            const statusText = document.getElementById('status-text');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            statusDiv.classList.remove('hidden');
+            submitBtn.disabled = true;
+            
+            let count = 0;
+            for (const file of files) {
+                count++;
+                statusText.textContent = `Importation : ${count} / ${files.length}`;
+                try {
+                    const dataUrlRaw = await readFileAsDataURL(file);
+                    const dataUrl = (typeof dbOptimizeImageDataUrl === 'function')
+                        ? await dbOptimizeImageDataUrl(dataUrlRaw)
+                        : dataUrlRaw;
+                    const inferredName = file.name ? file.name.replace(/\.[^.]+$/, '') : '';
+                    const id = await dbAddImage(dataUrl, cat, inferredName);
+                    if (id) {
+                        images = [{ id, url: dataUrl, cat, name: inferredName }, ...images];
+                        renderGrid();
+                    }
+                } catch (err) {
+                    console.error("Error importing file:", file.name, err);
+                }
+            }
+            
+            statusDiv.classList.add('hidden');
+            closeModal();
+            await refreshImages();
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => resolve(ev.target.result);
+                reader.onerror = (err) => reject(err);
+                reader.readAsDataURL(file);
+            });
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.add('drag-over');
+        }
+        function handleDragLeave() {
+            document.getElementById('drop-zone').classList.remove('drag-over');
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) loadFile(file);
+        }
+
+        function handleDropZoneClick(e) {
+            // Prevent double file picker (buttons inside also trigger click).
+            const t = e.target;
+            const tag = (t && t.tagName) ? t.tagName.toLowerCase() : '';
+            if (tag === 'button' || tag === 'input' || tag === 'label' || (t && t.closest && t.closest('button'))) {
+                return;
+            }
+            document.getElementById('file-input').click();
+        }
+        function loadFile(file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                pendingDataUrl = ev.target.result;
+                const preview = document.getElementById('img-preview');
+                preview.src = pendingDataUrl;
+                preview.classList.remove('hidden');
+                document.getElementById('drop-preview').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ── Add image ──────────────────────────────────────────
+        async function addImage() {
+            if (!pendingDataUrl) {
+                alert("Aucune image sélectionnée.");
+                return;
+            }
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            const cat = document.querySelector('input[name="category"]:checked').value;
+            const name = document.getElementById('image-name-input').value.trim();
+            let finalUrl = pendingDataUrl;
+            try {
+                finalUrl = (typeof dbOptimizeImageDataUrl === 'function')
+                    ? await dbOptimizeImageDataUrl(pendingDataUrl)
+                    : pendingDataUrl;
+            } catch (e) {
+                finalUrl = pendingDataUrl;
+            }
+
+            // Make sure the new image is visible immediately (no hidden state due to filters/search).
+            currentFilter = 'tous';
+            currentSearch = '';
+            const searchInput = document.getElementById('library-search');
+            if (searchInput) searchInput.value = '';
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            const allBtn = document.querySelector('.filter-pill[data-cat="tous"]');
+            if (allBtn) allBtn.classList.add('active');
+
+            // Instant UI: show now, save in background.
+            const tempId = `tmp-${Date.now()}`;
+            const optimistic = { id: tempId, url: finalUrl, cat, name };
+            optimisticImages = [optimistic, ...optimisticImages.filter((img) => img.url !== finalUrl)];
+            images = [optimistic, ...images.filter((img) => img.url !== finalUrl)];
+            renderGrid();
+            closeModal();
+
+            let id = null;
+            try {
+                id = await dbAddImage(finalUrl, cat, name);
+            } catch (e) {
+                id = null;
+            }
+            if (!id) {
+                optimisticImages = optimisticImages.filter((img) => img.url !== finalUrl);
+                images = images.filter((img) => img.url !== finalUrl);
+                renderGrid();
+                const reason = (typeof dbGetLastError === 'function' ? dbGetLastError() : '') || 'Ajout impossible';
+                alert(reason);
+                submitBtn.disabled = false;
+                return;
+            }
+
+            optimisticImages = optimisticImages.map((img) => img.url === finalUrl ? { ...img, id } : img);
+            images = images.map((img) => img.url === finalUrl ? { ...img, id } : img);
+            renderGrid();
+            refreshImages();
+        }
+
+        // ── OneDrive Import ───────────────────────────────────
+        let odItems = [];
+        let odSelected = new Set();
+
+        function openOdModal() {
+            document.getElementById('onedrive-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            resetOdModal();
+        }
+        function closeOdModal() {
+            document.getElementById('onedrive-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function handleOdBackdropClick(e) {
+            if (e.target === document.getElementById('onedrive-modal')) closeOdModal();
+        }
+        function resetOdModal() {
+            document.getElementById('od-link').value = '';
+            document.getElementById('od-grid').innerHTML = '';
+            document.getElementById('od-status').classList.add('hidden');
+            document.getElementById('od-status').style.display = '';
+            document.getElementById('od-error').classList.add('hidden');
+            document.getElementById('od-actions').classList.add('hidden');
+            document.getElementById('od-actions').style.display = '';
+            document.querySelector('input[name="od-category"][value="produit"]').checked = true;
+            odItems = [];
+            odSelected.clear();
+        }
+
+        function encodeShareUrl(url) {
+            const base64 = btoa(url)
+                .replace(/=/g, '')
+                .replace(/\//g, '_')
+                .replace(/\+/g, '-');
+            return 'u!' + base64;
+        }
+
+        async function loadOneDriveFolder() {
+            const link = document.getElementById('od-link').value.trim();
+            if (!link) return;
+
+            const status = document.getElementById('od-status');
+            const error = document.getElementById('od-error');
+            const grid = document.getElementById('od-grid');
+            const actions = document.getElementById('od-actions');
+
+            status.classList.remove('hidden');
+            status.style.display = 'flex';
+            error.classList.add('hidden');
+            actions.classList.add('hidden');
+            grid.innerHTML = '';
+            odItems = [];
+            odSelected.clear();
+
+            try {
+                const encoded = encodeShareUrl(link);
+                const res = await fetch(
+                    `https://api.onedrive.com/v1.0/shares/${encoded}/root/children?$top=200&$expand=thumbnails`
+                );
+
+                if (!res.ok) {
+                    throw new Error('Impossible d\'accéder au dossier. Vérifiez que le lien est un partage public OneDrive.');
+                }
+
+                const data = await res.json();
+                const imageFiles = (data.value || []).filter(item =>
+                    item.file && item.file.mimeType && item.file.mimeType.startsWith('image/')
+                );
+
+                if (imageFiles.length === 0) {
+                    throw new Error('Aucune image trouvée dans ce dossier.');
+                }
+
+                odItems = imageFiles;
+
+                imageFiles.forEach((item, idx) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'od-thumb aspect-square';
+                    thumb.onclick = () => toggleOdSelect(idx, thumb);
+
+                    // Prefer thumbnail, fallback to download URL
+                    let thumbUrl = item['@content.downloadUrl'];
+                    if (item.thumbnails && item.thumbnails.length > 0) {
+                        const t = item.thumbnails[0];
+                        thumbUrl = (t.large || t.medium || t.small || {}).url || thumbUrl;
+                    }
+
+                    thumb.innerHTML = `
+                        <img src="${thumbUrl}" class="w-full h-full object-cover" alt="${item.name}" loading="lazy" />
+                        <div class="od-check">
+                            <span class="material-symbols-outlined text-[14px]">check</span>
+                        </div>
+                    `;
+                    grid.appendChild(thumb);
+                });
+
+                status.classList.add('hidden');
+                actions.classList.remove('hidden');
+                actions.style.display = 'flex';
+
+            } catch (err) {
+                status.classList.add('hidden');
+                error.textContent = err.message;
+                error.classList.remove('hidden');
+            }
+        }
+
+        function toggleOdSelect(idx, el) {
+            if (odSelected.has(idx)) {
+                odSelected.delete(idx);
+                el.classList.remove('selected');
+            } else {
+                odSelected.add(idx);
+                el.classList.add('selected');
+            }
+            updateOdImportBtn();
+        }
+
+        function toggleSelectAll() {
+            const thumbs = document.querySelectorAll('.od-thumb');
+            if (odSelected.size === odItems.length) {
+                odSelected.clear();
+                thumbs.forEach(t => t.classList.remove('selected'));
+            } else {
+                odItems.forEach((_, idx) => odSelected.add(idx));
+                thumbs.forEach(t => t.classList.add('selected'));
+            }
+            updateOdImportBtn();
+        }
+
+        function updateOdImportBtn() {
+            const btn = document.getElementById('od-import-btn');
+            btn.textContent = `Importer (${odSelected.size})`;
+            btn.disabled = odSelected.size === 0;
+        }
+
+        function resizeImage(imgEl, maxDim = 1200) {
+            const canvas = document.createElement('canvas');
+            let w = imgEl.naturalWidth;
+            let h = imgEl.naturalHeight;
+            if (w > maxDim || h > maxDim) {
+                if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                else { w = Math.round(w * maxDim / h); h = maxDim; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+            return canvas.toDataURL('image/jpeg', 0.85);
+        }
+
+        async function importSelected() {
+            if (odSelected.size === 0) return;
+
+            const cat = document.querySelector('input[name="od-category"]:checked').value;
+            const btn = document.getElementById('od-import-btn');
+            const total = odSelected.size;
+            let imported = 0;
+            btn.textContent = `Import… 0/${total}`;
+            btn.disabled = true;
+
+            const selectedItems = [...odSelected].map(idx => odItems[idx]);
+
+            for (const item of selectedItems) {
+                const downloadUrl = item['@content.downloadUrl'];
+                if (!downloadUrl) continue;
+
+                try {
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = () => {
+                            try {
+                                resolve(resizeImage(img));
+                            } catch (e) {
+                                resolve(downloadUrl);
+                            }
+                        };
+                        img.onerror = () => resolve(downloadUrl);
+                        img.src = downloadUrl;
+                    });
+                    const finalUrl = (typeof dbOptimizeImageDataUrl === 'function')
+                        ? await dbOptimizeImageDataUrl(dataUrl)
+                        : dataUrl;
+                    const inferredName = item.name ? String(item.name).replace(/\.[^.]+$/, '') : '';
+                    const id = await dbAddImage(finalUrl, cat, inferredName);
+                    if (id) {
+                        images = [{ id, url: finalUrl, cat, name: inferredName }, ...images];
+                        renderGrid();
+                    }
+                } catch (e) {
+                    const inferredName = item.name ? String(item.name).replace(/\.[^.]+$/, '') : '';
+                    const id = await dbAddImage(downloadUrl, cat, inferredName);
+                    if (id) {
+                        images = [{ id, url: downloadUrl, cat, name: inferredName }, ...images];
+                        renderGrid();
+                    }
+                }
+
+                imported++;
+                btn.textContent = `Import… ${imported}/${total}`;
+            }
+
+            closeOdModal();
+            await refreshImages();
+        }
+
+        // ── Init ───────────────────────────────────────────────
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
+        initLibrary();
+    </script>
+
+</body>
+
+</html>
