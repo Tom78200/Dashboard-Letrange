@@ -28,7 +28,6 @@
                     <img src="Logo_Letrange_Paris_1838.webp" alt="LÉTRANGE" style="display:block; width: 220px; margin: 0 auto 4rem auto; filter: brightness(0);">
                     
                     <div style="margin-bottom: 2rem; text-align: left;">
-                        <h2 style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4em; color: #1a1c1c; margin-bottom: 2.5rem; text-align: center;">Accès Studio Letrange</h2>
                         
                         <div style="margin-bottom: 1.5rem;">
                             <label style="font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #999;">Email Professionnel</label>

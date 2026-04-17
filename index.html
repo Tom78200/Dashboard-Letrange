@@ -176,19 +176,6 @@
             border-radius: 2px;
             z-index: 10;
         }
-        .status-badge {
-            display: none;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 2px 8px;
-            font-size: 8px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            border-radius: 2px;
-            z-index: 10;
-        }
 
         /* Prevent horizontal scroll */
         html, body {
@@ -493,12 +480,12 @@
                 const hasContent = cardsToRender.some(({ card }) => card.image);
 
                 const section = document.createElement('section');
-                section.className = 'flex flex-col md:flex-row gap-6 sm:gap-8 lg:gap-12 pb-12 sm:pb-16';
+                section.className = 'flex flex-col md:flex-row gap-4 sm:gap-8 lg:gap-12 pb-12 sm:pb-16';
                 section.setAttribute('data-id', week.id);
                 section.innerHTML = `
-                    <div class="flex flex-row md:flex-col md:w-32 items-center md:items-start gap-3 md:gap-0 md:sticky md:top-28 lg:top-32 h-fit">
-                        <span class="text-[2.5rem] sm:text-[3.5rem] font-black leading-none tracking-tighter text-primary${hasContent ? '' : '/20'}">${numStr}</span>
-                        <span class="text-[0.6875rem] font-black uppercase tracking-[0.3em] md:rotate-180 md:[writing-mode:vertical-lr] md:mt-4 md:self-center ${hasContent ? 'text-on-surface-variant' : 'text-zinc-200'}">
+                    <div class="flex flex-row md:flex-col md:w-32 items-baseline md:items-start gap-2 md:gap-0 md:sticky md:top-28 lg:top-32 h-fit shrink-0">
+                        <span class="text-[2rem] sm:text-[3.5rem] font-black leading-none tracking-tighter text-primary${hasContent ? '' : '/20'}">${numStr}</span>
+                        <span class="text-[9px] sm:text-[0.6875rem] font-black uppercase tracking-[0.3em] md:rotate-180 md:[writing-mode:vertical-lr] md:mt-4 md:self-center ${hasContent ? 'text-on-surface-variant' : 'text-zinc-200'}">
                             SEMAINE
                         </span>
                         
