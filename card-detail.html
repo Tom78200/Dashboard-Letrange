@@ -492,7 +492,9 @@
             const slotEl = document.getElementById(`slot-${slot}`);
             if (!url) {
                 slotEl.innerHTML = `
-                    <div class="absolute top-2 left-2 text-[10px] font-bold text-zinc-300 pointer-events-none">${slot + 1}</div>
+                    <div class="absolute top-1.5 left-1.5 w-4 h-4 bg-zinc-100 text-zinc-400 text-[8px] font-black flex items-center justify-center rounded-full pointer-events-none z-10 border border-zinc-200">
+                        ${slot + 1}
+                    </div>
                     <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${slot})"><span class="material-symbols-outlined text-[12px]">close</span></div>
                     <span class="material-symbols-outlined text-zinc-200 text-[20px]">add</span>
                 `;
@@ -501,7 +503,9 @@
 
             const isActive = (prompt && prompt.trim().length > 0);
             slotEl.innerHTML = `
-                <div class="absolute top-2 left-2 text-[10px] font-bold text-white shadow-sm pointer-events-none z-10">${slot + 1}</div>
+                <div class="absolute top-1.5 left-1.5 w-4 h-4 bg-black/80 text-white text-[8px] font-black flex items-center justify-center rounded-full pointer-events-none z-10 shadow-md">
+                    ${slot + 1}
+                </div>
                 <div class="remove-img" onclick="event.stopPropagation(); removeGalleryImg(${slot})"><span class="material-symbols-outlined text-[12px]">close</span></div>
                 
                 <img src="${url}" class="w-full h-full object-cover" />
