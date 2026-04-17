@@ -476,16 +476,6 @@
             reader.onload = async (ev) => {
                 const dataUrl = ev.target.result;
                 selectImage(dataUrl);
-
-                // Immediately add to Library so it appears everywhere (picker, search, other pages).
-                const card = currentWeek?.cards?.[cardIdx] || {};
-                const cat = (card.code || 'produit').toLowerCase();
-                const inferredName = file.name ? file.name.replace(/\.[^.]+$/, '') : '';
-                if (typeof dbAddImage === 'function') {
-                    await dbAddImage(dataUrl, cat, inferredName);
-                    pickerImages = []; // force reload
-                    await renderLibrary();
-                }
             };
             reader.readAsDataURL(file);
         }
@@ -702,38 +692,20 @@
                     card.image = await dbOptimizeImageDataUrl(card.image);
                 }
 
-            // Ensure every selected image also exists in the library table,
-            // so persistence is consistent between weeks and library.
-            const normalizedCat = (card.code || 'produit').toLowerCase();
-            const existingImages = await dbGetAllImages();
-            const existingUrls = new Set((existingImages || []).map((img) => img.url));
+                card.gallery.forEach((item, i) => {
+                    const url = item && typeof item === 'object' ? item.url : item;
+                    const promptEl = document.getElementById(`prompt-${i}`);
+                    const promptVal = promptEl ? promptEl.value : (item && typeof item === 'object' ? item.prompt : '');
+                    card.gallery[i] = { url, prompt: promptVal };
+                });
 
-            async function ensureImageInLibrary(url) {
-                if (!url) return;
-                if (existingUrls.has(url)) return;
-                await dbAddImage(url, normalizedCat);
-                existingUrls.add(url);
-            }
-
-            await ensureImageInLibrary(card.image);
-            
-            card.gallery.forEach((item, i) => {
-                const url = item && typeof item === 'object' ? item.url : item;
-                // Get prompt from UI if it exists, otherwise from data
-                const promptEl = document.getElementById(`prompt-${i}`);
-                const promptVal = promptEl ? promptEl.value : (item && typeof item === 'object' ? item.prompt : '');
-                
-                card.gallery[i] = { url, prompt: promptVal };
-            });
-
-            for (const item of card.gallery) {
-                const url = item && typeof item === 'object' ? item.url : item;
-                const optimized = (typeof dbOptimizeImageDataUrl === 'function') ? await dbOptimizeImageDataUrl(url) : url;
-                if (item && typeof item === 'object') {
-                    item.url = optimized;
+                for (const item of card.gallery) {
+                    const url = item && typeof item === 'object' ? item.url : item;
+                    const optimized = (typeof dbOptimizeImageDataUrl === 'function') ? await dbOptimizeImageDataUrl(url) : url;
+                    if (item && typeof item === 'object') {
+                        item.url = optimized;
+                    }
                 }
-                await ensureImageInLibrary(optimized);
-            }
             
             const updateOk = await dbUpdateWeek(currentWeek);
             if (!updateOk) {
