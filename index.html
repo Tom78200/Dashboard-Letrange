@@ -511,41 +511,40 @@
                 return;
             }
 
-            boardWeeks.forEach((week, weekIdx) => {
-                const cardsToRender = week.cards
-                    .map((card, idx) => ({ card, idx }))
-                    .filter(({ card }) => matchesCardSearch(card));
-                if (queryActive && cardsToRender.length === 0) return;
+            boardWeeks.forEach(week => {
+                const weekMatches = !queryActive || week.cards.some(c => matchesCardSearch(c));
+                
+                if (weekMatches) {
+                    const dateLabel = getWeekDateLabel(week.number);
+                    const hasContent = week.cards.some(card => card.image);
 
-                const dateLabel = getWeekDateLabel(week.number);
-                const hasContent = cardsToRender.some(({ card }) => card.image);
-
-                const section = document.createElement('section');
-                section.className = 'flex flex-col md:flex-row gap-4 sm:gap-8 lg:gap-12 pb-12 sm:pb-16';
-                section.setAttribute('data-id', week.id);
-                section.innerHTML = `
-                    <div class="flex flex-row md:flex-col md:w-32 items-baseline md:items-start gap-2 md:gap-0 md:sticky md:top-28 lg:top-32 h-fit shrink-0">
-                        <span class="text-[1.5rem] sm:text-[2.2rem] font-black leading-none tracking-tighter text-primary${hasContent ? '' : '/20'}">${dateLabel}</span>
-                        <span class="text-[9px] sm:text-[0.6875rem] font-black uppercase tracking-[0.3em] md:rotate-180 md:[writing-mode:vertical-lr] md:mt-4 md:self-center ${hasContent ? 'text-on-surface-variant' : 'text-zinc-200'}">
-                            SEMAINE
-                        </span>
-                        
-                        <div class="flex flex-col gap-2 mt-4">
-                            <button class="drag-handle text-zinc-300 hover:text-black transition-colors" title="Déplacer la semaine">
-                                <span class="material-symbols-outlined text-[18px]">drag_indicator</span>
-                            </button>
-                            <button onclick="deleteWeek(${week.id})" class="md:mt-2 text-zinc-300 hover:text-red-500 transition-colors" title="Supprimer la semaine">
-                                <span class="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
+                    const section = document.createElement('section');
+                    section.className = 'flex flex-col md:flex-row gap-4 sm:gap-8 lg:gap-12 pb-12 sm:pb-16';
+                    section.setAttribute('data-id', week.id);
+                    section.innerHTML = `
+                        <div class="flex flex-row md:flex-col md:w-32 items-baseline md:items-start gap-2 md:gap-0 md:sticky md:top-28 lg:top-32 h-fit shrink-0">
+                            <span class="text-[1.5rem] sm:text-[2.2rem] font-black leading-none tracking-tighter text-primary${hasContent ? '' : '/20'}">${dateLabel}</span>
+                            <span class="text-[9px] sm:text-[0.6875rem] font-black uppercase tracking-[0.3em] md:rotate-180 md:[writing-mode:vertical-lr] md:mt-4 md:self-center ${hasContent ? 'text-on-surface-variant' : 'text-zinc-200'}">
+                                SEMAINE
+                            </span>
+                            
+                            <div class="flex flex-col gap-2 mt-4">
+                                <button class="drag-handle text-zinc-300 hover:text-black transition-colors" title="Déplacer la semaine">
+                                    <span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+                                </button>
+                                <button onclick="deleteWeek(${week.id})" class="md:mt-2 text-zinc-300 hover:text-red-500 transition-colors" title="Supprimer la semaine">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                            ${cardsToRender.map(({ card, idx }) => renderCard(card, week.id, idx)).join('')}
+                        <div class="flex-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                ${week.cards.map((card, idx) => renderCard(card, week.id, idx)).join('')}
+                            </div>
                         </div>
-                    </div>
-                `;
-                container.appendChild(section);
+                    `;
+                    container.appendChild(section);
+                }
             });
 
             if (queryActive && container.childElementCount === 0) {
