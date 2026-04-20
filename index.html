@@ -462,12 +462,12 @@
             const week = {
                 number: getNextWeekNum(),
                 cards: [
-                    { title: '', image: '', code: 'Lundi' },
-                    { title: '', image: '', code: 'Mardi' },
-                    { title: '', image: '', code: 'Mercredi' },
-                    { title: '', image: '', code: 'Jeudi' },
-                    { title: '', image: '', code: 'Vendredi' },
-                    { title: '', image: '', code: 'Samedi' }
+                    { title: '', image: '', code: 'Lundi - Héritage' },
+                    { title: '', image: '', code: 'Mardi - Twist' },
+                    { title: '', image: '', code: 'Mercredi - Produit' },
+                    { title: '', image: '', code: 'Jeudi - Héritage' },
+                    { title: '', image: '', code: 'Vendredi - Twist' },
+                    { title: '', image: '', code: 'Samedi - Produit' }
                 ],
                 createdAt: Date.now()
             };
@@ -511,7 +511,7 @@
                 return;
             }
 
-            const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            const days = ['Lundi - Héritage', 'Mardi - Twist', 'Mercredi - Produit', 'Jeudi - Héritage', 'Vendredi - Twist', 'Samedi - Produit'];
 
             boardWeeks.forEach(week => {
                 // Ensure 6 cards per week
@@ -570,7 +570,7 @@
         }
 
         function renderCard(card, weekId, cardIdx) {
-            const slotTypes = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            const slotTypes = ['Lundi - Héritage', 'Mardi - Twist', 'Mercredi - Produit', 'Jeudi - Héritage', 'Vendredi - Twist', 'Samedi - Produit'];
             const displayType = card.code || slotTypes[cardIdx] || `Slot ${String(cardIdx + 1).padStart(2, '0')}`;
 
             if (card && card.image) {
