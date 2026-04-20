@@ -222,7 +222,7 @@
                 </section>
 
                 <!-- Video Result Section -->
-                <section class="space-y-6">
+                <section id="video-section" class="space-y-6">
                     <div class="flex items-center gap-4">
                         <span class="text-[2.5rem] font-black leading-none tracking-tighter text-black/10">04</span>
                         <h2 class="text-sm font-black uppercase tracking-widest">Résultat <span class="text-zinc-400 font-normal ml-2">(Vidéo finale)</span></h2>
@@ -316,6 +316,15 @@
         const urlParams = new URLSearchParams(window.location.search);
         const weekId = parseInt(urlParams.get('weekId'));
         cardIdx = parseInt(urlParams.get('cardIdx'));
+        const isPhotoDay = (cardIdx % 2 === 0);
+
+        if (isPhotoDay) {
+            document.getElementById('main-drop-zone').classList.replace('aspect-video', 'aspect-[4/5]');
+            document.getElementById('title-input').placeholder = "Titre de la photo";
+            document.querySelector('h3.text-zinc-500').textContent = "Objectifs du post photo";
+            document.getElementById('prompt-input').placeholder = "Décrivez votre vision pour cette photo...";
+            document.getElementById('video-section').classList.add('hidden');
+        }
 
         async function init() {
             if (isNaN(weekId) || isNaN(cardIdx)) {

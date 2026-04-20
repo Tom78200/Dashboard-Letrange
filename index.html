@@ -637,6 +637,9 @@
         function renderCard(card, weekId, cardIdx) {
             const slotTypes = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
             const displayType = card.code || slotTypes[cardIdx] || `Slot ${String(cardIdx + 1).padStart(2, '0')}`;
+            
+            // Photo Days: Lundi (0), Mercredi (2), Vendredi (4)
+            const isPhotoDay = (cardIdx % 2 === 0);
 
             if (card && card.image) {
                 return `
@@ -651,10 +654,10 @@
                         </div>
                         
                         <div class="status-badge">Validé</div>
-                        <div class="relative aspect-video overflow-hidden mb-4">
+                        <div class="relative ${isPhotoDay ? 'aspect-[4/5]' : 'aspect-video'} overflow-hidden mb-4">
                             <img class="card-thumb w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-105" src="${card.image}" alt="${card.title || ''}" />
                             <div class="absolute inset-0 bg-black/10"></div>
-                            ${card.resultVideo ? `
+                            ${(!isPhotoDay && card.resultVideo) ? `
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <div class="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 group-hover:bg-black/40 transition-colors">
                                         <span class="material-symbols-outlined text-white text-[20px]">play_arrow</span>
@@ -664,6 +667,11 @@
                                     Résultat Vidéo
                                 </div>
                             ` : ''}
+                            ${(isPhotoDay) ? `
+                                <div class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-[8px] font-black uppercase tracking-widest text-white border border-white/10">
+                                    POST PHOTO
+                                </div>
+                            `: ''}
                         </div>
                         <div class="p-5 flex flex-col gap-1">
                             <h3 class="text-xl font-medium tracking-tight text-on-surface leading-tight">${card.title || 'Sans titre'}</h3>
@@ -677,7 +685,7 @@
                 `;
             } else {
                 return `
-                    <div class="card-wrapper border-2 border-dashed border-zinc-100 aspect-video flex flex-col items-center justify-center cursor-pointer hover:border-zinc-300 hover:bg-zinc-50/50 transition-all group" 
+                    <div class="card-wrapper border-2 border-dashed border-zinc-100 ${isPhotoDay ? 'aspect-[4/5]' : 'aspect-video'} flex flex-col items-center justify-center cursor-pointer hover:border-zinc-300 hover:bg-zinc-50/50 transition-all group" 
                          data-idx="${cardIdx}"
                          onclick="openCard(${weekId}, ${cardIdx})">
                         <span class="material-symbols-outlined text-[24px] text-zinc-200 group-hover:text-zinc-400 transition-colors mb-2">add_photo_alternate</span>
