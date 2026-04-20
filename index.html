@@ -436,6 +436,11 @@
                 Sortable.create(grid, {
                     animation: 150,
                     ghostClass: 'opacity-20',
+                    // On mobile, dragging the whole card can block scrolling. 
+                    // We add a delay and threshold to allow natural scrolling.
+                    delay: 200, 
+                    delayOnTouchOnly: true,
+                    touchStartThreshold: 5,
                     onEnd: async function() {
                         const weekId = parseInt(grid.getAttribute('data-week-id'));
                         await handleCardSortEnd(weekId, grid);
