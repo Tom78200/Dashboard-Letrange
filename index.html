@@ -462,12 +462,12 @@
             const week = {
                 number: getNextWeekNum(),
                 cards: [
-                    { title: '', image: '', code: 'Lundi - Héritage' },
-                    { title: '', image: '', code: 'Mardi - Twist' },
-                    { title: '', image: '', code: 'Mercredi - Produit' },
-                    { title: '', image: '', code: 'Jeudi - Héritage' },
-                    { title: '', image: '', code: 'Vendredi - Twist' },
-                    { title: '', image: '', code: 'Samedi - Produit' }
+                    { title: '', image: '', code: 'Lundi' },
+                    { title: '', image: '', code: 'Mardi' },
+                    { title: '', image: '', code: 'Mercredi' },
+                    { title: '', image: '', code: 'Jeudi' },
+                    { title: '', image: '', code: 'Vendredi' },
+                    { title: '', image: '', code: 'Samedi' }
                 ],
                 createdAt: Date.now()
             };
@@ -511,20 +511,20 @@
                 return;
             }
 
-            const days = ['Lundi - Héritage', 'Mardi - Twist', 'Mercredi - Produit', 'Jeudi - Héritage', 'Vendredi - Twist', 'Samedi - Produit'];
+            const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
             boardWeeks.forEach(week => {
                 // Self-healing: Ensure 6 cards + correct naming
                 const oldToNew = {
-                    'Lundi': 'Lundi - Héritage',
-                    'Mardi': 'Mardi - Twist',
-                    'Mercredi': 'Mercredi - Produit',
-                    'Jeudi': 'Jeudi - Héritage',
-                    'Vendredi': 'Vendredi - Twist',
-                    'Samedi': 'Samedi - Produit',
-                    'Héritage': 'Lundi - Héritage',
-                    'Twist': 'Mardi - Twist',
-                    'Produit': 'Mercredi - Produit'
+                    'Lundi - Héritage': 'Lundi',
+                    'Mardi - Twist': 'Mardi',
+                    'Mercredi - Produit': 'Mercredi',
+                    'Jeudi - Héritage': 'Jeudi',
+                    'Vendredi - Twist': 'Vendredi',
+                    'Samedi - Produit': 'Samedi',
+                    'Héritage': 'Lundi',
+                    'Twist': 'Mardi',
+                    'Produit': 'Mercredi'
                 };
 
                 let needsSave = false;
@@ -593,7 +593,7 @@
         }
 
         function renderCard(card, weekId, cardIdx) {
-            const slotTypes = ['Lundi - Héritage', 'Mardi - Twist', 'Mercredi - Produit', 'Jeudi - Héritage', 'Vendredi - Twist', 'Samedi - Produit'];
+            const slotTypes = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
             const displayType = card.code || slotTypes[cardIdx] || `Slot ${String(cardIdx + 1).padStart(2, '0')}`;
 
             if (card && card.image) {
