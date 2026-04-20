@@ -286,11 +286,12 @@
         }
 
         // Project Base Date (April 13th 2026 as per user example)
-        let projectBaseDate = localStorage.getItem('letrange_base_date');
+        // Forced update to 20/04 as requested
+        let projectBaseDate = localStorage.getItem('letrange_base_date_v2'); 
         if (!projectBaseDate) {
-            const start = getMonday(new Date('2026-04-13'));
+            const start = getMonday(new Date('2026-04-20'));
             projectBaseDate = start.getTime();
-            localStorage.setItem('letrange_base_date', projectBaseDate);
+            localStorage.setItem('letrange_base_date_v2', projectBaseDate);
         } else {
             projectBaseDate = parseInt(projectBaseDate);
         }
@@ -418,14 +419,48 @@
 
         function initSortable() {
             const el = document.getElementById('dynamic-weeks');
-            Sortable.create(el, {
-                animation: 150,
-                handle: '.drag-handle',
-                ghostClass: 'opacity-50',
-                onEnd: async function() {
-                    await handleSortEnd();
-                }
+            if (el) {
+                Sortable.create(el, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'opacity-50',
+                    onEnd: async function() {
+                        await handleSortEnd();
+                    }
+                });
+            }
+
+            // Cards reordering inside weeks
+            const cardGrids = document.querySelectorAll('.cards-grid');
+            cardGrids.forEach(grid => {
+                Sortable.create(grid, {
+                    animation: 150,
+                    ghostClass: 'opacity-20',
+                    onEnd: async function() {
+                        const weekId = parseInt(grid.getAttribute('data-week-id'));
+                        await handleCardSortEnd(weekId, grid);
+                    }
+                });
             });
+        }
+
+        async function handleCardSortEnd(weekId, gridEl) {
+            const cardEls = gridEl.querySelectorAll('.card-wrapper');
+            const week = boardWeeks.find(w => w.id === weekId);
+            if (!week) return;
+
+            const oldCards = [...week.cards];
+            const newCards = [];
+            cardEls.forEach(el => {
+                const oldIdx = parseInt(el.getAttribute('data-idx'));
+                newCards.push(oldCards[oldIdx]);
+            });
+
+            week.cards = newCards;
+            await dbUpdateWeek(week);
+            // Re-render to ensure internal indices and labels match the new positions if they were default
+            renderDynamicWeeks();
+            initSortable(); // Re-init since DOM was rebuilt
         }
 
         async function handleSortEnd() {
@@ -573,7 +608,7 @@
                             </div>
                         </div>
                         <div class="flex-1">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div class="cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" data-week-id="${week.id}">
                                 ${week.cards.map((card, idx) => renderCard(card, week.id, idx)).join('')}
                             </div>
                         </div>
@@ -598,7 +633,8 @@
 
             if (card && card.image) {
                 return `
-                    <div class="group bg-surface-container-lowest border border-outline-variant/15 p-1 hover:border-outline-variant/50 transition-all cursor-pointer relative ${card.status === 'validated' ? 'card-validated' : ''}" 
+                    <div class="card-wrapper group bg-surface-container-lowest border border-outline-variant/15 p-1 hover:border-outline-variant/50 transition-all cursor-pointer relative ${card.status === 'validated' ? 'card-validated' : ''}" 
+                         data-idx="${cardIdx}"
                          onclick="openCard(${weekId}, ${cardIdx})"
                          onmouseenter="startCarousel(this, ${weekId}, ${cardIdx})"
                          onmouseleave="stopCarousel(this, '${card.image}')">
@@ -606,7 +642,7 @@
                         <div class="absolute top-4 left-4 z-10 px-2 py-0.5 bg-black/80 backdrop-blur-sm text-[8px] font-bold uppercase tracking-[0.2em] text-white">
                             ${displayType}
                         </div>
-
+                        
                         <div class="status-badge">Validé</div>
                         <div class="relative aspect-video overflow-hidden mb-4">
                             <img class="card-thumb w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-105" src="${card.image}" alt="${card.title || ''}" />
@@ -634,7 +670,9 @@
                 `;
             } else {
                 return `
-                    <div class="border-2 border-dashed border-zinc-100 aspect-video flex flex-col items-center justify-center cursor-pointer hover:border-zinc-300 hover:bg-zinc-50/50 transition-all group" onclick="openCard(${weekId}, ${cardIdx})">
+                    <div class="card-wrapper border-2 border-dashed border-zinc-100 aspect-video flex flex-col items-center justify-center cursor-pointer hover:border-zinc-300 hover:bg-zinc-50/50 transition-all group" 
+                         data-idx="${cardIdx}"
+                         onclick="openCard(${weekId}, ${cardIdx})">
                         <span class="material-symbols-outlined text-[24px] text-zinc-200 group-hover:text-zinc-400 transition-colors mb-2">add_photo_alternate</span>
                         <p class="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-300 group-hover:text-zinc-500 transition-colors">${displayType}</p>
                     </div>
