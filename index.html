@@ -451,16 +451,23 @@
 
             const oldCards = [...week.cards];
             const newCards = [];
-            cardEls.forEach(el => {
+            const standardDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+            cardEls.forEach((el, newIdx) => {
                 const oldIdx = parseInt(el.getAttribute('data-idx'));
-                newCards.push(oldCards[oldIdx]);
+                const card = oldCards[oldIdx];
+                // Force reset the day label based on the NEW grid position
+                if (standardDays[newIdx]) {
+                    card.code = standardDays[newIdx];
+                }
+                newCards.push(card);
             });
 
             week.cards = newCards;
             await dbUpdateWeek(week);
-            // Re-render to ensure internal indices and labels match the new positions if they were default
+            // Re-render to show updated labels and fix data-idx attributes
             renderDynamicWeeks();
-            initSortable(); // Re-init since DOM was rebuilt
+            initSortable();
         }
 
         async function handleSortEnd() {
