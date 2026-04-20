@@ -252,15 +252,18 @@
         </header>
         <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pt-12 sm:pt-16 pb-0">
             <!-- Column Labels Header (Desktop Align) -->
-            <div class="hidden lg:flex items-start gap-12 mb-8">
+            <div class="hidden xl:flex items-start gap-12 mb-8">
                 <!-- Spacer matching Week Number column -->
                 <div class="w-32 shrink-0 flex flex-col items-start pt-1">
                     <span class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300">CALENDRIER</span>
                 </div>
                 <!-- Grid Labels matching Card columns -->
-                <div class="flex-1 grid grid-cols-3 gap-8">
+                <div class="flex-1 grid grid-cols-6 gap-8">
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Lundi</div>
                     <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Mardi</div>
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Mercredi</div>
                     <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Jeudi</div>
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Vendredi</div>
                     <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Samedi</div>
                 </div>
             </div>
@@ -476,9 +479,12 @@
             const week = {
                 number: getNextWeekNum(),
                 cards: [
-                    { title: '', image: '', code: 'Héritage' },
-                    { title: '', image: '', code: 'Twist' },
-                    { title: '', image: '', code: 'Produit' }
+                    { title: '', image: '', code: 'Lundi' },
+                    { title: '', image: '', code: 'Mardi' },
+                    { title: '', image: '', code: 'Mercredi' },
+                    { title: '', image: '', code: 'Jeudi' },
+                    { title: '', image: '', code: 'Vendredi' },
+                    { title: '', image: '', code: 'Samedi' }
                 ],
                 createdAt: Date.now()
             };
@@ -551,7 +557,7 @@
                         </div>
                     </div>
                     <div class="flex-1">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:grid-cols-3 lg:gap-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 lg:gap-8">
                             ${cardsToRender.map(({ card, idx }) => renderCard(card, week.id, idx)).join('')}
                         </div>
                     </div>
@@ -570,7 +576,7 @@
         }
 
         function renderCard(card, weekId, cardIdx) {
-            const slotTypes = ['Héritage', 'Twist', 'Produit'];
+            const slotTypes = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
             const displayType = card.code || slotTypes[cardIdx] || `Slot ${String(cardIdx + 1).padStart(2, '0')}`;
 
             if (card && card.image) {
