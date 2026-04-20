@@ -251,23 +251,6 @@
             </div>
         </header>
         <div class="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pt-12 sm:pt-16 pb-0">
-            <!-- Column Labels Header (Desktop Align) -->
-            <div class="hidden xl:flex items-start gap-12 mb-8">
-                <!-- Spacer matching Week Number column -->
-                <div class="w-32 shrink-0 flex flex-col items-start pt-1">
-                    <span class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300">CALENDRIER</span>
-                </div>
-                <!-- Grid Labels matching Card columns -->
-                <div class="flex-1 grid grid-cols-6 gap-8">
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Lundi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Mardi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Mercredi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Jeudi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Vendredi</div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 border-l border-zinc-200 pl-4">Samedi</div>
-                </div>
-            </div>
-
             <!-- Dynamic Weeks -->
             <div id="dynamic-weeks" class="space-y-12 sm:space-y-24 lg:space-y-32 pb-16 sm:pb-24 lg:pb-32"></div>
             
@@ -557,7 +540,7 @@
                         </div>
                     </div>
                     <div class="flex-1">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 lg:gap-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                             ${cardsToRender.map(({ card, idx }) => renderCard(card, week.id, idx)).join('')}
                         </div>
                     </div>
@@ -585,7 +568,12 @@
                          onclick="openCard(${weekId}, ${cardIdx})"
                          onmouseenter="startCarousel(this, ${weekId}, ${cardIdx})"
                          onmouseleave="stopCarousel(this, '${card.image}')">
-                         <div class="status-badge">Validé</div>
+                         
+                        <div class="absolute top-4 left-4 z-10 px-2 py-0.5 bg-black/80 backdrop-blur-sm text-[8px] font-bold uppercase tracking-[0.2em] text-white">
+                            ${displayType}
+                        </div>
+
+                        <div class="status-badge">Validé</div>
                         <div class="relative aspect-video overflow-hidden mb-4">
                             <img class="card-thumb w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-105" src="${card.image}" alt="${card.title || ''}" />
                             <div class="absolute inset-0 bg-black/10"></div>
@@ -600,10 +588,10 @@
                                 </div>
                             ` : ''}
                         </div>
-                        <div class="p-4 flex flex-col gap-1">
-                            <h3 class="text-xl font-medium tracking-tight text-on-surface">${card.title || 'Sans titre'}</h3>
-                            <div class="flex justify-between items-center">
-                                <span class="text-[0.6875rem] font-bold uppercase tracking-widest text-zinc-400">${displayType}</span>
+                        <div class="p-5 flex flex-col gap-1">
+                            <h3 class="text-xl font-medium tracking-tight text-on-surface leading-tight">${card.title || 'Sans titre'}</h3>
+                            <div class="flex justify-between items-center mt-2 pt-3 border-t border-zinc-50">
+                                <span class="text-[0.6px] font-black uppercase tracking-[0.2em] text-zinc-300">STUDIO LÉTRANGE</span>
                                 ${card.corrective ? '<span class="text-[10px] font-bold uppercase text-red-500 bg-red-50 px-1.5 py-0.5">Correctif</span>' : ''}
                             </div>
                             ${card.corrective ? `<p class="mt-2 text-[11px] text-red-600 line-clamp-2 leading-tight bg-red-50/30 p-2 border-l-2 border-red-500">${card.corrective}</p>` : ''}
@@ -612,9 +600,9 @@
                 `;
             } else {
                 return `
-                    <div class="border-2 border-dashed border-zinc-200 h-48 sm:h-64 flex flex-col items-center justify-center cursor-pointer hover:border-zinc-400 hover:bg-zinc-50/50 transition-all" onclick="openCard(${weekId}, ${cardIdx})">
-                        <span class="material-symbols-outlined text-[28px] text-zinc-300 mb-2">add_photo_alternate</span>
-                        <p class="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-zinc-400">${displayType}</p>
+                    <div class="border-2 border-dashed border-zinc-100 aspect-video flex flex-col items-center justify-center cursor-pointer hover:border-zinc-300 hover:bg-zinc-50/50 transition-all group" onclick="openCard(${weekId}, ${cardIdx})">
+                        <span class="material-symbols-outlined text-[24px] text-zinc-200 group-hover:text-zinc-400 transition-colors mb-2">add_photo_alternate</span>
+                        <p class="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-300 group-hover:text-zinc-500 transition-colors">${displayType}</p>
                     </div>
                 `;
             }
