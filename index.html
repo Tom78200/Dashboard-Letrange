@@ -454,9 +454,7 @@
             const week = boardWeeks.find(w => w.id === weekId);
             if (!week) return;
 
-            const oldCards = [...week.cards];
-            const newCards = [];
-            const standardDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            const standardDays = ['Lundi - Photo', 'Mardi - Vidéo', 'Mercredi - Photo', 'Jeudi - Vidéo', 'Vendredi - Photo', 'Samedi - Vidéo'];
 
             cardEls.forEach((el, newIdx) => {
                 const oldIdx = parseInt(el.getAttribute('data-idx'));
@@ -509,12 +507,12 @@
             const week = {
                 number: getNextWeekNum(),
                 cards: [
-                    { title: '', image: '', code: 'Lundi' },
-                    { title: '', image: '', code: 'Mardi' },
-                    { title: '', image: '', code: 'Mercredi' },
-                    { title: '', image: '', code: 'Jeudi' },
-                    { title: '', image: '', code: 'Vendredi' },
-                    { title: '', image: '', code: 'Samedi' }
+                    { title: '', image: '', code: 'Lundi - Photo' },
+                    { title: '', image: '', code: 'Mardi - Vidéo' },
+                    { title: '', image: '', code: 'Mercredi - Photo' },
+                    { title: '', image: '', code: 'Jeudi - Vidéo' },
+                    { title: '', image: '', code: 'Vendredi - Photo' },
+                    { title: '', image: '', code: 'Samedi - Vidéo' }
                 ],
                 createdAt: Date.now()
             };
@@ -558,20 +556,17 @@
                 return;
             }
 
-            const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            const days = ['Lundi - Photo', 'Mardi - Vidéo', 'Mercredi - Photo', 'Jeudi - Vidéo', 'Vendredi - Photo', 'Samedi - Vidéo'];
 
             boardWeeks.forEach(week => {
                 // Self-healing: Ensure 6 cards + correct naming
                 const oldToNew = {
-                    'Lundi - Héritage': 'Lundi',
-                    'Mardi - Twist': 'Mardi',
-                    'Mercredi - Produit': 'Mercredi',
-                    'Jeudi - Héritage': 'Jeudi',
-                    'Vendredi - Twist': 'Vendredi',
-                    'Samedi - Produit': 'Samedi',
-                    'Héritage': 'Lundi',
-                    'Twist': 'Mardi',
-                    'Produit': 'Mercredi'
+                    'Lundi': 'Lundi - Photo',
+                    'Mardi': 'Mardi - Vidéo',
+                    'Mercredi': 'Mercredi - Photo',
+                    'Jeudi': 'Jeudi - Vidéo',
+                    'Vendredi': 'Vendredi - Photo',
+                    'Samedi': 'Samedi - Vidéo'
                 };
 
                 let needsSave = false;
@@ -642,7 +637,7 @@
         }
 
         function renderCard(card, weekId, cardIdx) {
-            const slotTypes = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            const slotTypes = ['Lundi - Photo', 'Mardi - Vidéo', 'Mercredi - Photo', 'Jeudi - Vidéo', 'Vendredi - Photo', 'Samedi - Vidéo'];
             const displayType = card.code || slotTypes[cardIdx] || `Slot ${String(cardIdx + 1).padStart(2, '0')}`;
             
             // Photo Days: Lundi (0), Mercredi (2), Vendredi (4)
