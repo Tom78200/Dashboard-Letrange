@@ -511,7 +511,19 @@
                 return;
             }
 
+            const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
             boardWeeks.forEach(week => {
+                // Ensure 6 cards per week
+                if (!week.cards || week.cards.length < 6) {
+                    if (!week.cards) week.cards = [];
+                    while (week.cards.length < 6) {
+                        const idx = week.cards.length;
+                        week.cards.push({ title: '', image: '', code: days[idx] });
+                    }
+                    dbUpdateWeek(week); // Persist background
+                }
+
                 const weekMatches = !queryActive || week.cards.some(c => matchesCardSearch(c));
                 
                 if (weekMatches) {
