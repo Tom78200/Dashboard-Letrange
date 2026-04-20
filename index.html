@@ -514,15 +514,38 @@
             const days = ['Lundi - Héritage', 'Mardi - Twist', 'Mercredi - Produit', 'Jeudi - Héritage', 'Vendredi - Twist', 'Samedi - Produit'];
 
             boardWeeks.forEach(week => {
-                // Ensure 6 cards per week
-                if (!week.cards || week.cards.length < 6) {
-                    if (!week.cards) week.cards = [];
-                    while (week.cards.length < 6) {
-                        const idx = week.cards.length;
-                        week.cards.push({ title: '', image: '', code: days[idx] });
+                // Self-healing: Ensure 6 cards + correct naming
+                const oldToNew = {
+                    'Lundi': 'Lundi - Héritage',
+                    'Mardi': 'Mardi - Twist',
+                    'Mercredi': 'Mercredi - Produit',
+                    'Jeudi': 'Jeudi - Héritage',
+                    'Vendredi': 'Vendredi - Twist',
+                    'Samedi': 'Samedi - Produit',
+                    'Héritage': 'Lundi - Héritage',
+                    'Twist': 'Mardi - Twist',
+                    'Produit': 'Mercredi - Produit'
+                };
+
+                let needsSave = false;
+                if (!week.cards) { week.cards = []; needsSave = true; }
+                
+                // 1. Fix existing names
+                week.cards.forEach((card, idx) => {
+                    if (oldToNew[card.code]) {
+                        card.code = oldToNew[card.code];
+                        needsSave = true;
                     }
-                    dbUpdateWeek(week); // Persist background
+                });
+
+                // 2. Pad to 6 cards
+                while (week.cards.length < 6) {
+                    const idx = week.cards.length;
+                    week.cards.push({ title: '', image: '', code: days[idx] });
+                    needsSave = true;
                 }
+
+                if (needsSave) dbUpdateWeek(week);
 
                 const weekMatches = !queryActive || week.cards.some(c => matchesCardSearch(c));
                 
